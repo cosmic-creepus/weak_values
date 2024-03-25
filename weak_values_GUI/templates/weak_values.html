@@ -20,7 +20,7 @@
 <body>
     <h1>{{ title }}</h1>
 
-    <form action="/weak_values">
+    <form id="myForm">
 
         <br>
         <label for="runs">Number of runs:</label>
@@ -28,14 +28,13 @@
         <br>
 
         <br>
-        <label for="power">Root SWAP power:</label>
-        <input type="text" name="power" placeholder="6" />
+        <label for="power">Root SWAP power n:</label>
+        <input type="text" name="power" placeholder="6" /> (where \(2^n\) is the number of steps per SWAP)
         <br>
 
         <br>
         <label for="swap_iter">SWAP iteration:</label>
-        <input type="text" name="swap_iter" placeholder="1" />
-         (e.g. 2 is identity)
+        <input type="text" name="swap_iter" placeholder="1" />(e.g. 2 is identity)
         <br>
 
         <br>
@@ -80,8 +79,7 @@
             <div>
                 <input type="checkbox"
                name="show_plot"
-               value="yes"
-               checked> Plot
+               value="yes"> Plot
             </div>
             <div>
                 <input type="checkbox"
@@ -97,7 +95,7 @@
                value="yes"> Apply single gate rotation
         <br>
         <br>
-        <button name="submit" type="submit" onclick="runPythonScript()">Submit</button>
+        <button name="submit" onclick="openNewPage()">Submit</button>
         <button name="reset" type="reset">Reset All</button>
         <br>
         <br>
@@ -110,7 +108,7 @@
         <br>
         Quantum Mechanics prediction of final state of |i >:
         <br>
-        TODO
+        <p>{{ i_qm_predict }}</p>
         <br>
 
         <br>
@@ -160,8 +158,6 @@
         Imaginary Velocities: TODO
         <br>
 
-    </form>
-
 <script>
 document.querySelector("input[name='show_plot']").addEventListener("change", function() {
   var secondaryCheckbox = document.querySelector("input[name='plot_plane']");
@@ -200,8 +196,17 @@ radioButtons_i.forEach(function(radioButton) {
     }
   });
 });
+
+function openNewPage() {
+  var plotCheckbox = document.querySelector("input[name='show_plot']");
+  if (plotCheckbox.checked) {
+      var newWindow = window.open("/plot/", '_blank');
+      newWindow.focus(); // Optional: bring the new window to focus
+      }
+}
 </script>
 
-</body>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-</html>
+</body>
