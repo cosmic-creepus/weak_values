@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>{{ title }}</title>
+    <link href="{{ url_for('static', filename='css/style.css')}}" rel="stylesheet" />
+
+    <style>
+      .custom-blockquote {
+        margin-left: 40px; /* Adjust the value as needed */
+      }
+    </style>
+
+</head>
+
+<body>
+    <h1>{{ title }}</h1>
+
+    <form action="/weak_values">
+
+        <br>
+        <label for="runs">Number of runs:</label>
+        <input type="text" name="runs" placeholder="10" />
+        <br>
+
+        <br>
+        <label for="power">Root SWAP power:</label>
+        <input type="text" name="power" placeholder="6" />
+        <br>
+
+        <br>
+        <label for="swap_iter">SWAP iteration:</label>
+        <input type="text" name="swap_iter" placeholder="1" />
+         (e.g. 2 is identity)
+        <br>
+
+        <br>
+        Select |i > input state:
+        <br>
+        <input type="radio"
+               name="agree_i"
+               value="separable"
+               checked="checked">Separable
+        <br>
+        <input type="radio"
+               name="agree_i"
+               value="entangled">Entangled
+        <br>
+        <input type="radio"
+               name="agree_i"
+               value="manual">User's choice
+        <br>
+        <input type="text" name="i" id="i" placeholder="Enter |i> state" disabled/>
+        <br>
+        <br>
+        Select |f > input state:
+        <br>
+        <input type="radio"
+               name="agree_f"
+               value="separable"
+               checked="checked">Separable
+        <br>
+        <input type="radio"
+               name="agree_f"
+               value="entangled">Entangled
+        <br>
+        <input type="radio"
+               name="agree_f"
+               value="manual">User's choice
+        <br>
+        <input type="text" name="f" id="f" placeholder="Enter |f> state" disabled/>
+        <br>
+        <br>
+        <fieldset>
+            <legend> Plotting </legend>
+            <div>
+                <input type="checkbox"
+               name="show_plot"
+               value="yes"
+               checked> Plot
+            </div>
+            <div>
+                <input type="checkbox"
+               name="plot_plane"
+               value="yes"
+               disabled> Plot Ellipse Plane
+            </div>
+
+        </fieldset>
+        <br>
+        <input type="checkbox"
+               name="single_gate_rotation"
+               value="yes"> Apply single gate rotation
+        <br>
+        <br>
+        <button name="submit" type="submit" onclick="runPythonScript()">Submit</button>
+        <button name="reset" type="reset">Reset All</button>
+        <br>
+        <br>
+        <br>
+        Input states:
+        <br>
+        <p>|i >: {{ i }}</p>
+        <p>|f >: {{ f }}</p>
+
+        <br>
+        Quantum Mechanics prediction of final state of |i >:
+        <br>
+        TODO
+        <br>
+
+        <br>
+        Real Weak Values
+            <br>
+            <blockquote class="custom-blockquote">
+                <fieldset>
+                    <legend> Left </legend>
+                        <p>Start: {{ start_left_real }}</p>
+                        <p>Finish: {{ finish_left_real }}</p>
+
+                </fieldset>
+                <br>
+                <fieldset>
+                    <legend> Right </legend>
+                        <p>Start: {{ start_right_real }}</p>
+                        <p>Finish: {{ finish_right_real }}</p>
+
+                </fieldset>
+            </blockquote>
+        <br>
+        <br>
+        Imaginary Weak Values
+            <br>
+            <blockquote class="custom-blockquote">
+                <fieldset>
+                    <legend> Left </legend>
+                        <p>Start: {{ start_left_imag }}</p>
+                        <p>Finish: {{ finish_left_imag }}</p>
+
+                </fieldset>
+                <br>
+                <fieldset>
+                    <legend> Right </legend>
+                        <p>Start: {{ start_right_imag }}</p>
+                        <p>Finish: {{ finish_right_imag }}</p>
+
+                </fieldset>
+            </blockquote>
+        <br>
+        <br>
+
+        <br>
+        Real Velocities: TODO
+        <br>
+
+        Imaginary Velocities: TODO
+        <br>
+
+    </form>
+
+<script>
+document.querySelector("input[name='show_plot']").addEventListener("change", function() {
+  var secondaryCheckbox = document.querySelector("input[name='plot_plane']");
+  if (this.checked) {
+    secondaryCheckbox.disabled = false;
+  } else {
+    secondaryCheckbox.disabled = true;
+    secondaryCheckbox.checked = false; // Uncheck if main checkbox is unchecked
+  }
+});
+
+var radioButtons_f = document.querySelectorAll('input[type="radio"][name="agree_f"]');
+var textInput_f = document.getElementById("f");
+
+radioButtons_f.forEach(function(radioButton) {
+  radioButton.addEventListener("change", function() {
+    if (this.value === "manual") {
+      textInput_f.disabled = false;
+    } else {
+      textInput_f.disabled = true;
+      textInput_f.value = ""; // Clear input value if radio button is not option 3
+    }
+  });
+});
+
+var radioButtons_i = document.querySelectorAll('input[type="radio"][name="agree_i"]');
+var textInput_i = document.getElementById("i");
+
+radioButtons_i.forEach(function(radioButton) {
+  radioButton.addEventListener("change", function() {
+    if (this.value === "manual") {
+      textInput_i.disabled = false;
+    } else {
+      textInput_i.disabled = true;
+      textInput_i.value = ""; // Clear input value if radio button is not option 3
+    }
+  });
+});
+</script>
+
+</body>
+
+</html>
