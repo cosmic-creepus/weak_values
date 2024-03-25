@@ -2,6 +2,7 @@ import gc
 import csv
 import time
 import plotly.graph_objects as go
+import os
 from plotly.subplots import make_subplots
 
 # importing required libraries
@@ -89,16 +90,24 @@ def SpinOpsR():
 
 # To generate a table
 class ListTable(list):
-    def _repr_html_(self):
+
+    def __init__(self, table_header, table_data):
+        super().__init__()
+        self.table_header = table_header
+        self.table_data = table_data
+
+    def repr_html(self):
         html = ["<table>"]
-        for row in self:
-            html.append("<tr>")
 
-            for col in row:
-                html.append("<td>{0}</td>".format(col))
+        for data in [[self.table_header], self.table_data]:
+            for row in data:
+                html.append("<tr>")
+                for col in row:
+                    html.append("<td>{0}</td>".format(col))
 
-            html.append("</tr>")
+                html.append("</tr>")
         html.append("</table>")
+        html.append("</body>")
         return ''.join(html)
 
 
@@ -594,8 +603,9 @@ def plot_weak_values(weak_values_all_left: list = None,
             fig_p.add_trace(trace)
 
         fig_p.update_layout(margin=dict(l=0, r=0, b=0, t=0))
-        fig_p.write_html("test.html")  # Modifiy the html file
-        fig_p.show()
+        # fig_p.write_html(os.getcwd() + "/templates/plot.html", auto_open=False)  # Modify the html file with local server
+        fig_p.write_html(os.getcwd() + "/weak_values_GUI/templates/plot.html", auto_open=False)  # Modify the html file with web server
+        # fig_p.show() #opens the file on the local server
 
     return weak_values_all_left_rot_x, weak_values_all_right_rot_x, final_rotated_values, ellipse_dict, is_ellipse
 
@@ -1425,10 +1435,7 @@ def nroot_swap_weak_value_vectors(i, f, n, swap_iter: float, rot_step: int, one_
             if not weak_vals_close:
                 break
 
-    table = ListTable()
-    table.append(['n', 'Wlx', 'Wly', 'Wlz', 'Wrx', 'Wry', 'Wrz'])  # put column labels here
-    for o in range(0, len(data)):
-        table.append(data[o])
+    table = ListTable(table_header=['n', 'Wlx', 'Wly', 'Wlz', 'Wrx', 'Wry', 'Wrz'], table_data=data)
 
     # round values
     weak_values_all_left = list(np.around(weak_values_all_left, decimals=4))
@@ -1441,7 +1448,7 @@ def nroot_swap_weak_value_vectors(i, f, n, swap_iter: float, rot_step: int, one_
     # print(f"Average of <f|i> over all gate steps: {sum(f_dot_i_left)/len(f_dot_i_left)}")
     # print(f"< final f| initial i> {f_dot_i_left[0]} | < initial f| final i> {f_dot_i_left[-1]}")
 
-    return weak_values_all_left, weak_values_all_right, weak_values_all_left_imag, weak_values_all_right_imag, f_dot_i_left, one_qbit_rotation, weak_vals_close, data_csv
+    return weak_values_all_left, weak_values_all_right, weak_values_all_left_imag, weak_values_all_right_imag, f_dot_i_left, one_qbit_rotation, weak_vals_close, data_csv, table.repr_html(), evolved_j[-1]
 
 
 def plot_ellipse(points, center, semi_major, semi_minor, foci, rotation_angle=0, num_points=100, plot=False):
@@ -1510,7 +1517,7 @@ def plot_html():
 
     # tight layout
     fig.update_layout(margin=dict(l=0, r=0, b=0, t=0))
-    fig.write_html("test.html")  # Modifiy the html file
+    fig.write_html("templates/plot.html")  # Modify the html file
     fig.show()
 
 

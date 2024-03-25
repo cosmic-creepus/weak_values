@@ -1,7 +1,6 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, stream_template, request
 from weak_values import get_input_states, plot_weak_values, nroot_swap_weak_value_vectors
 from waitress import serve
-import time
 
 app = Flask(__name__)
 
@@ -66,23 +65,32 @@ def run_app():
      weak_values_all_left_imag,
      weak_values_all_right_imag,
      f_dot_i_left, single_qbit_rotation,
-     weak_vals_close, data_csv) = nroot_swap_weak_value_vectors(i=i,
-                                                                f=f,
-                                                                n=power,
-                                                                swap_iter=swap_iter,
-                                                                rot_step=5,
-                                                                one_qbit_rotation=False)
+     weak_vals_close,
+     data_csv,
+     html_table,
+     i_qm_predict) = nroot_swap_weak_value_vectors(i=i,
+                                                 f=f,
+                                                 n=power,
+                                                 swap_iter=swap_iter,
+                                                 rot_step=5,
+                                                 one_qbit_rotation=False)
 
     _, _, final_rotated_vals, plot_dict, _ = plot_weak_values(weak_values_all_left=weak_values_all_left_real,
                                                               weak_values_all_right=weak_values_all_right_real,
                                                               weak_values_all_left_imag=weak_values_all_left_imag,
                                                               weak_values_all_right_imag=weak_values_all_right_imag,
                                                               show_plot=show_plot)
+
     submit = request.args.get('submit')
     #
     # print(f"submit: {submit}")
     # if submit == "click":
     #     print("Submit button got clicked!")
+
+    # Write html to file - suppressed until further notice
+    # with open("templates/weak_values.html", "a+") as file:
+    #     file.write(html_table)
+    # file.close()
 
     return render_template(
         "weak_values.html",
@@ -99,7 +107,16 @@ def run_app():
         start_right_imag=f"{weak_values_all_right_imag[0]}",
         finish_right_imag=f"{weak_values_all_right_imag[-1]}",
 
+        i_qm_predict=f"{i_qm_predict}",
+
     )
+
+
+@app.route('/plot')
+def plot():
+    return stream_template(
+        "plot.html",
+        title="Weak Values Plot")
 
 
 @app.route('/about')
