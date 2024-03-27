@@ -372,7 +372,6 @@ def plot_weak_values(weak_values_all_left: list = None,
                      center_lines: bool = False,
                      plot_foci: bool = False,
                      show_plot: bool = False):
-
     if weak_values is None:
         weak_values = ["real", "imaginary"]
     ellipse_dict = {}
@@ -520,10 +519,12 @@ def plot_weak_values(weak_values_all_left: list = None,
         # ax.scatter(center[0], center[1], center[2], color='purple')  # plot center of current ellipse
         # ax.scatter(max_right[0], max_right[1], max_right[2], color='black')  # plot max right of current ellipse
         if plot_foci:
-            traces.append(go.Scatter3d(x=[x_rot_data['foci'][0][0]], y=[x_rot_data['foci'][0][1]], z=[x_rot_data['foci'][0][2]],
-                                       ))  # plot left focus of current ellipse
-            traces.append(go.Scatter3d(x=[x_rot_data['foci'][1][0]], y=[x_rot_data['foci'][1][1]], z=[x_rot_data['foci'][1][2]],
-                                       ))  # plot right focus of current ellipse
+            traces.append(
+                go.Scatter3d(x=[x_rot_data['foci'][0][0]], y=[x_rot_data['foci'][0][1]], z=[x_rot_data['foci'][0][2]],
+                             ))  # plot left focus of current ellipse
+            traces.append(
+                go.Scatter3d(x=[x_rot_data['foci'][1][0]], y=[x_rot_data['foci'][1][1]], z=[x_rot_data['foci'][1][2]],
+                             ))  # plot right focus of current ellipse
 
         is_ellipse = check_points_on_ellipse(points=weak_values_all_left_rot_x + weak_values_all_right_rot_x,
                                              center=x_rot_data['center'], semi_major_axis=x_rot_data['major_axis'],
@@ -581,14 +582,18 @@ def plot_weak_values(weak_values_all_left: list = None,
         # plot vectors
         if plot_quiver:
             for v in weak_values_all_right:
-                traces.append(go.Scatter3d(x=np.array([0, v[0]]), y=np.array([0, v[1]]), z=np.array([0, v[2]]), mode='lines'))
+                traces.append(
+                    go.Scatter3d(x=np.array([0, v[0]]), y=np.array([0, v[1]]), z=np.array([0, v[2]]), mode='lines'))
             for v in weak_values_all_left:
-                traces.append(go.Scatter3d(x=np.array([0, v[0]]), y=np.array([0, v[1]]), z=np.array([0, v[2]]), mode='lines'))
+                traces.append(
+                    go.Scatter3d(x=np.array([0, v[0]]), y=np.array([0, v[1]]), z=np.array([0, v[2]]), mode='lines'))
 
             for v in weak_values_all_right_imag:
-                traces.append(go.Scatter3d(x=np.array([0, v[0]]), y=np.array([0, v[1]]), z=np.array([0, v[2]]), mode='lines'))
+                traces.append(
+                    go.Scatter3d(x=np.array([0, v[0]]), y=np.array([0, v[1]]), z=np.array([0, v[2]]), mode='lines'))
             for v in weak_values_all_left_imag:
-                traces.append(go.Scatter3d(x=np.array([0, v[0]]), y=np.array([0, v[1]]), z=np.array([0, v[2]]), mode='lines'))
+                traces.append(
+                    go.Scatter3d(x=np.array([0, v[0]]), y=np.array([0, v[1]]), z=np.array([0, v[2]]), mode='lines'))
 
         final_rotated_values.update({weak_values[order]: [weak_values_all_left_rot_x, weak_values_all_right_rot_x]})
 
@@ -606,7 +611,8 @@ def plot_weak_values(weak_values_all_left: list = None,
 
         ### Important - comment/uncomment below 2 lines as needed per their own description ###
         # fig_p.write_html(os.getcwd() + "/templates/plot.html", auto_open=False)  # Modify the html file with local server
-        fig_p.write_html(os.getcwd() + "/weak_values_GUI/templates/plot.html", auto_open=False)  # Modify the html file with web server
+        fig_p.write_html(os.getcwd() + "/weak_values_GUI/templates/plot.html",
+                         auto_open=False)  # Modify the html file with web server
         # fig_p.show() #opens the file on the local server
 
     return weak_values_all_left_rot_x, weak_values_all_right_rot_x, final_rotated_values, ellipse_dict, is_ellipse
@@ -1225,16 +1231,22 @@ def calc_velocity(j, g, n=20):
 
 
 # Let's try n nth-root swap gates (equivalent to one root swap) and calculate Sx, Sy, Sz for each qubit (left + right)
-def nroot_swap_weak_value_vectors(i, f, n, swap_iter: float, rot_step: int, one_qbit_rotation: bool = False,
+def nroot_swap_weak_value_vectors(i, f, n,
+                                  rot_step: int = 0,
+                                  swap_iter: float = 1,
+                                  one_qbit_rotation: bool = False,
+                                  rotation_side: str = "real",
                                   n_hat=None):
     """
   Performs root-swap by performing n x 2 2^n-root swaps (forwards and backwards evolution of i and f, respectively)
+  :param rot_step: step at which single gubit rotation will occur
   :param i - initial state to be forward evolved
   :param f - final state to be backward evolved
   :param n - power of n-root swap (1/2^n)
-  :param n_hat - guess for n_hat (rotation axis)
+  :param rotation_side - determines whether the one qubit rotation is on the left or right
   :param swap_iter - determines number of swap iterations
   :param one_qbit_rotation - perform a one qubit rotation (at some random step, determined by rot_step)
+  :param n_hat - guess for n_hat (rotation axis)
   :return weak_values_all_left - list of the left weak value vectors
   :return weak_values_all_right - list of the right weak value vectors
   :return table - table of values of the weak value vectors components
@@ -1242,9 +1254,11 @@ def nroot_swap_weak_value_vectors(i, f, n, swap_iter: float, rot_step: int, one_
 
     # Make a guess for n_hat if none given
     if n_hat is None:
-        n_hat_left, n_hat_left_imag, n_hat_right, n_hat_right_imag = guess_n_hat(i=i, f=f, n=n, swap_iter=swap_iter,
+        n_hat_left, n_hat_left_imag, n_hat_right, n_hat_right_imag = guess_n_hat(i=i, f=f, n=n,
+                                                                                 swap_iter=swap_iter,
                                                                                  rot_step=rot_step)
-        n_hat = n_hat_left
+        n_hat = n_hat_left if rotation_side == "real" else n_hat_left_imag
+
     evo_operator = nestrs(n)
 
     U, Uinv = Unitary(theta=np.pi / 200, n_hat=n_hat)
@@ -1445,12 +1459,15 @@ def nroot_swap_weak_value_vectors(i, f, n, swap_iter: float, rot_step: int, one_
     weak_values_all_left_imag = list(np.around(weak_values_all_left_imag, decimals=4))
     weak_values_all_right_imag = list(np.around(weak_values_all_right_imag, decimals=4))
 
+    i_qm_prediction = evolved_j[-1]
+
     # print(f"f_dot_i_left: {f_dot_i_left}")
     # print(f"f_dot_i_right: {f_dot_i_right}")
     # print(f"Average of <f|i> over all gate steps: {sum(f_dot_i_left)/len(f_dot_i_left)}")
     # print(f"< final f| initial i> {f_dot_i_left[0]} | < initial f| final i> {f_dot_i_left[-1]}")
 
-    return weak_values_all_left, weak_values_all_right, weak_values_all_left_imag, weak_values_all_right_imag, f_dot_i_left, one_qbit_rotation, weak_vals_close, data_csv, table.repr_html(), evolved_j[-1]
+    return weak_values_all_left, weak_values_all_right, weak_values_all_left_imag, weak_values_all_right_imag, \
+           f_dot_i_left, one_qbit_rotation, weak_vals_close, data_csv, table.repr_html(), i_qm_prediction
 
 
 def plot_ellipse(points, center, semi_major, semi_minor, foci, rotation_angle=0, num_points=100, plot=False):
@@ -1729,8 +1746,13 @@ def get_input_states(i_state: str = "separable", f_state: str = "separable"):
     return i, f
 
 
-if __name__ == "__main__":
-
+def run_weak_vals(num_runs: int = 1, rot_side: str = "real"):
+    """
+    Run weak values app.
+    :param rot_side: determines whether the one qubit rotation will be on the left or right
+    :param num_runs: number of iterations to run
+    :return:
+    """
     ellipse_dict_all = []
     time_start = time.time()
     success = []
@@ -1738,9 +1760,7 @@ if __name__ == "__main__":
     csv_data = []
     run = 0
 
-    num_states = int(input("\n Please enter the number of runs: "))  # number of states to iterate
-
-    while run < num_states:
+    while run < num_runs:
         run += 1
         print(f"Run: {run}")
 
@@ -1761,8 +1781,18 @@ if __name__ == "__main__":
 
         # First iteration of weak values and second guess
         data_csv = [" "]
-        weak_values_all_left_real, weak_values_all_right_real, weak_values_all_left_imag, weak_values_all_right_imag, f_dot_i_left, single_qbit_rotation, weak_vals_close, data_csv = nroot_swap_weak_value_vectors(
-            i=i, f=f, n=n, swap_iter=1.0, rot_step=rot_step, one_qbit_rotation=True)
+        (weak_values_all_left_real,
+         weak_values_all_right_real,
+         weak_values_all_left_imag,
+         weak_values_all_right_imag,
+         f_dot_i_left,
+         single_qbit_rotation,
+         weak_vals_close,
+         data_csv, _, _) = nroot_swap_weak_value_vectors(i=i, f=f, n=n,
+                                                         swap_iter=1.0,
+                                                         rot_step=rot_step,
+                                                         # rotation_side=rotation_side, TODO
+                                                         one_qbit_rotation=True)
 
         print(f"weak_vals_close: {weak_vals_close}")
         if single_qbit_rotation:
@@ -1772,9 +1802,20 @@ if __name__ == "__main__":
             while not weak_vals_close and trials < max_trials:
                 print(f"Rotation axis: {weak_values_all_left_real[rot_step]}")
 
-                weak_values_all_left_real, weak_values_all_right_real, weak_values_all_left_imag, weak_values_all_right_imag, f_dot_i_left, single_qbit_rotation, weak_vals_close, data_csv = nroot_swap_weak_value_vectors(
-                    i=i, f=f, n=n, swap_iter=1.0, rot_step=rot_step, one_qbit_rotation=single_qbit_rotation,
-                    n_hat=weak_values_all_left_real[rot_step])
+                n_hat = weak_values_all_left_real[rot_step] if rot_side == "real" else weak_values_all_left_imag[rot_step]
+                (weak_values_all_left_real,
+                 weak_values_all_right_real,
+                 weak_values_all_left_imag,
+                 weak_values_all_right_imag,
+                 f_dot_i_left,
+                 single_qbit_rotation,
+                 weak_vals_close,
+                 data_csv, _, _) = nroot_swap_weak_value_vectors(i=i, f=f, n=n,
+                                                                 swap_iter=1.0,
+                                                                 rot_step=rot_step,
+                                                                 # rotation_side=rotation_side, TODO
+                                                                 one_qbit_rotation=single_qbit_rotation,
+                                                                 n_hat=n_hat)
 
                 trials += 1
 
@@ -1785,8 +1826,8 @@ if __name__ == "__main__":
                 print("Iteration didn't converge!")
                 csv_data += [["Iteration didn't converge!"]]
 
-                num_states += 1
-                print(f"num_states: {num_states}")
+                num_runs += 1
+                print(f"num_runs: {num_runs}")
 
             print(f"data_csv: {data_csv}")
 
@@ -1830,7 +1871,7 @@ if __name__ == "__main__":
         # final rotated values that may still have an angle or rotation for ellipse that is not accounted for
         _, _, final_rotated_vals, plot_dict, _ = plot_weak_values(weak_values_all_left_real, weak_values_all_right_real,
                                                                   weak_values_all_left_imag, weak_values_all_right_imag,
-                                                                  plot_quiver=False, plot_plane=False, show_plot=True)
+                                                                  plot_quiver=False, plot_plane=False, show_plot=False)
         key_list = list(final_rotated_vals.keys())
         for c in range(len(key_list)):
 
@@ -2042,7 +2083,7 @@ if __name__ == "__main__":
     time_stop = time.time()
     run_time = time_stop - time_start
     print(f"Total run time: {run_time}")
-    print(f"Time per single run (average): {run_time / num_states}")
+    print(f"Time per single run (average): {run_time / num_runs}")
 
     # name of csv file
     filename = "velocity_with_rotation.csv"
@@ -2056,3 +2097,9 @@ if __name__ == "__main__":
 
         # writing the data rows
         csvwriter.writerows(csv_data)
+
+
+if __name__ == "__main__":
+    num_runs = int(input("\n Please enter the number of runs: "))  # number of states to iterate
+    run_weak_vals(num_runs=num_runs)
+

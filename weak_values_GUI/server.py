@@ -1,4 +1,4 @@
-from flask import Flask, render_template, stream_template, request
+from flask import Flask, render_template, request
 from weak_values import get_input_states, plot_weak_values, nroot_swap_weak_value_vectors
 from waitress import serve
 import os
@@ -14,7 +14,6 @@ def index():
 
 @app.route('/weak_values/')
 def run_app():
-
     runs = request.args.get('runs')
     # Check for empty strings or string with only spaces
     if runs is None:
@@ -46,13 +45,28 @@ def run_app():
         agree_f = "separable"
 
     show_plot = request.args.get('show_plot')
-    print(show_plot)
     show_plot = True if show_plot == "yes" else False
+
+    single_gate_rotation = request.args.get('single_gate_rotation')
+    single_gate_rotation = True if single_gate_rotation == "yes" else False
+
+    rot_step = 0  # initial default
+    rotation_side = "real"
+    if single_gate_rotation:
+        rot_step = request.args.get('rot_step')
+        if rot_step:
+            rot_step = int(rot_step)
+        else:
+            rot_step = int(2 ** (power - 1))  # default to middle point
+
+        rotation_side = request.args.get('rotation_side')
 
     print(f"runs: {runs}")
     print(f"power: {power}")
     print(f"agree_i: {agree_i}")
     print(f"agree_f: {agree_f}")
+    print(f"rot_step: {rot_step}")
+    print(f"rotation_side: {rotation_side}")
 
     i, f = get_input_states(i_state=agree_i, f_state=agree_f)
     if i is None:
@@ -69,12 +83,13 @@ def run_app():
      weak_vals_close,
      data_csv,
      html_table,
-     i_qm_predict) = nroot_swap_weak_value_vectors(i=i,
-                                                 f=f,
-                                                 n=power,
-                                                 swap_iter=swap_iter,
-                                                 rot_step=5,
-                                                 one_qbit_rotation=False)
+     i_qm_prediction) = nroot_swap_weak_value_vectors(i=i,
+                                                      f=f,
+                                                      n=power,
+                                                      swap_iter=swap_iter,
+                                                      rot_step=rot_step,
+                                                      rotation_side=rotation_side,
+                                                      one_qbit_rotation=single_gate_rotation)
 
     _, _, final_rotated_vals, plot_dict, _ = plot_weak_values(weak_values_all_left=weak_values_all_left_real,
                                                               weak_values_all_right=weak_values_all_right_real,
@@ -107,17 +122,17 @@ def run_app():
         start_right_imag=f"{weak_values_all_right_imag[0]}",
         finish_right_imag=f"{weak_values_all_right_imag[-1]}",
 
-        i_qm_predict=f"{i_qm_predict}",
+        i_qm_predict=f"{i_qm_prediction}",
+        single_gate_point_real_left=f"{weak_values_all_left_real[rot_step] if single_gate_rotation else 'No rotation'}",
+        single_gate_point_real_right=f"{weak_values_all_right_real[rot_step] if single_gate_rotation else 'No rotation'}",
+        single_gate_point_imag_left=f"{weak_values_all_left_imag[rot_step] if single_gate_rotation else 'No rotation'}",
+        single_gate_point_imag_right=f"{weak_values_all_right_imag[rot_step] if single_gate_rotation else 'No rotation'}",
 
     )
 
 
 @app.route('/plot/')
 def plot():
-    # return render_template(
-    #     "plot.html",
-    #     title="Weak Values Plot")
-
     # use when opening the file from the web server only
     plot_file = open(os.getcwd() + "/weak_values_GUI/templates/plot.html", "r+", encoding="utf-8")
 

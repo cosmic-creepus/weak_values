@@ -24,21 +24,21 @@
 
         <br>
         <label for="runs">Number of runs:</label>
-        <input type="text" name="runs" placeholder="10" />
+        <input type="text" name="runs" id="runs" placeholder="10" />
         <br>
 
         <br>
         <label for="power">Root SWAP power n:</label>
-        <input type="text" name="power" placeholder="6" /> (where \(2^n\) is the number of steps per SWAP)
+        <input type="text" name="power" id="power" placeholder="6" /> (where \(2^n\) is the number of steps per SWAP)
         <br>
 
         <br>
         <label for="swap_iter">SWAP iteration:</label>
-        <input type="text" name="swap_iter" placeholder="1" />(e.g. 2 is identity)
+        <input type="text" name="swap_iter" id="swap_iter" placeholder="1" /> (e.g. 2 is identity)
         <br>
 
         <br>
-        Select |i > input state:
+        Select |i\(\rangle\) input state:
         <br>
         <input type="radio"
                name="agree_i"
@@ -56,7 +56,7 @@
         <input type="text" name="i" id="i" placeholder="Enter |i> state" disabled/>
         <br>
         <br>
-        Select |f > input state:
+        Select |f\(\rangle\) input state:
         <br>
         <input type="radio"
                name="agree_f"
@@ -90,10 +90,29 @@
 
         </fieldset>
         <br>
-        <input type="checkbox"
-               name="single_gate_rotation"
-               value="yes"> Apply single gate rotation
-        <br>
+        <fieldset>
+            <legend> Single Gate Rotation (left side only) </legend>
+            <div>
+                <input type="checkbox"
+                       name="single_gate_rotation"
+                       value="yes"> Apply rotation
+            </div>
+            <div>
+                 <input type="radio"
+                   name="rotation_side"
+                   value="real"
+                   checked="checked" disabled> Real
+                <br>
+                <input type="radio"
+                   name="rotation_side"
+                   value="imaginary" disabled> Imaginary
+                <br>
+            </div>
+            <div>
+                <label for="rot_step">Single gate rotation step:</label>
+                <input type="text" name="rot_step" id="rot_step" placeholder="Enter rotation step" disabled/>
+            </div>
+        </fieldset>
         <br>
         <button name="submit" onclick="openNewPage()">Submit</button>
         <button name="reset" type="reset">Reset All</button>
@@ -102,11 +121,11 @@
         <br>
         Input states:
         <br>
-        <p>|i >: {{ i }}</p>
-        <p>|f >: {{ f }}</p>
+        <p>|i\(\rangle\): {{ i }}</p>
+        <p>|f\(\rangle\): {{ f }}</p>
 
         <br>
-        Quantum Mechanics prediction of final state of |i >:
+        Quantum Mechanics prediction of final state of |i\(\rangle\):
         <br>
         <p>{{ i_qm_predict }}</p>
         <br>
@@ -118,6 +137,7 @@
                 <fieldset>
                     <legend> Left </legend>
                         <p>Start: {{ start_left_real }}</p>
+                        <p>At single gate point: {{ single_gate_point_real_left }}</p>
                         <p>Finish: {{ finish_left_real }}</p>
 
                 </fieldset>
@@ -125,6 +145,7 @@
                 <fieldset>
                     <legend> Right </legend>
                         <p>Start: {{ start_right_real }}</p>
+                        <p>At single gate point: {{ single_gate_point_real_right }}</p>
                         <p>Finish: {{ finish_right_real }}</p>
 
                 </fieldset>
@@ -137,6 +158,7 @@
                 <fieldset>
                     <legend> Left </legend>
                         <p>Start: {{ start_left_imag }}</p>
+                        <p>At single gate point: {{ single_gate_point_imag_left }}</p>
                         <p>Finish: {{ finish_left_imag }}</p>
 
                 </fieldset>
@@ -144,6 +166,7 @@
                 <fieldset>
                     <legend> Right </legend>
                         <p>Start: {{ start_right_imag }}</p>
+                        <p>At single gate point: {{ single_gate_point_imag_right }}</p>
                         <p>Finish: {{ finish_right_imag }}</p>
 
                 </fieldset>
@@ -151,13 +174,13 @@
         <br>
         <br>
 
-        <br>
-        Real Velocities: TODO
-        <br>
+    <br>
+    Real Velocities: TODO
+    <br>
 
-        Imaginary Velocities: TODO
-        <br>
-
+    Imaginary Velocities: TODO
+    <br>
+    </form>
 <script>
 document.querySelector("input[name='show_plot']").addEventListener("change", function() {
   var secondaryCheckbox = document.querySelector("input[name='plot_plane']");
@@ -166,6 +189,24 @@ document.querySelector("input[name='show_plot']").addEventListener("change", fun
   } else {
     secondaryCheckbox.disabled = true;
     secondaryCheckbox.checked = false; // Uncheck if main checkbox is unchecked
+  }
+});
+
+document.querySelector("input[name='single_gate_rotation']").addEventListener("change", function() {
+  var textInput_rot_step = document.querySelector("input[name='rot_step']");
+  var radioButtons_rotation_side = document.querySelectorAll('input[type="radio"][name="rotation_side"]');
+
+  if (this.checked) {
+    textInput_rot_step.disabled = false;
+    radioButtons_rotation_side.forEach(function(radioButton) {
+        radioButton.disabled = false;
+        });
+  } else {
+    radioButtons_rotation_side.forEach(function(radioButton) {
+        radioButton.disabled = true;
+        });
+    textInput_rot_step.disabled = true;
+    textInput_rot_step.value = ""; // Disable if main checkbox is unchecked
   }
 });
 
