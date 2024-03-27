@@ -1,7 +1,6 @@
 from flask import Flask, render_template, stream_template, request
 from weak_values import get_input_states, plot_weak_values, nroot_swap_weak_value_vectors
 from waitress import serve
-
 app = Flask(__name__)
 
 
@@ -34,7 +33,7 @@ def run_app():
         swap_iter = "1"  # use as default
     if not bool(swap_iter.strip()):
         swap_iter = "1"  # use as default
-    swap_iter = int(swap_iter)
+    swap_iter = float(swap_iter)
 
     agree_i = request.args.get('agree_i')
     if agree_i is None:
