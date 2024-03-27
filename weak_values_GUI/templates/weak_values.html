@@ -200,7 +200,7 @@ radioButtons_i.forEach(function(radioButton) {
 function openNewPage() {
   var plotCheckbox = document.querySelector("input[name='show_plot']");
   if (plotCheckbox.checked) {
-      var newWindow = window.open("/plot", '_blank');
+      var newWindow = window.open("/plot/", '_blank');
       newWindow.focus(); // Optional: bring the new window to focus
       }
 }

@@ -603,8 +603,10 @@ def plot_weak_values(weak_values_all_left: list = None,
             fig_p.add_trace(trace)
 
         fig_p.update_layout(margin=dict(l=0, r=0, b=0, t=0))
-        # fig_p.write_html(os.getcwd() + "/templates/plot.html", auto_open=False)  # Modify the html file with local server
-        fig_p.write_html(os.getcwd() + "/weak_values_GUI/templates/plot.html", auto_open=False)  # Modify the html file with web server
+
+        ### Important - comment/uncomment below 2 lines as needed per their own description ###
+        fig_p.write_html(os.getcwd() + "/templates/plot.html", auto_open=False)  # Modify the html file with local server
+        # fig_p.write_html(os.getcwd() + "/weak_values_GUI/templates/plot.html", auto_open=False)  # Modify the html file with web server
         # fig_p.show() #opens the file on the local server
 
     return weak_values_all_left_rot_x, weak_values_all_right_rot_x, final_rotated_values, ellipse_dict, is_ellipse

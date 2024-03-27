@@ -1,6 +1,8 @@
 from flask import Flask, render_template, stream_template, request
 from weak_values import get_input_states, plot_weak_values, nroot_swap_weak_value_vectors
 from waitress import serve
+import os
+
 app = Flask(__name__)
 
 
@@ -79,7 +81,6 @@ def run_app():
                                                               weak_values_all_left_imag=weak_values_all_left_imag,
                                                               weak_values_all_right_imag=weak_values_all_right_imag,
                                                               show_plot=show_plot)
-
     submit = request.args.get('submit')
     #
     # print(f"submit: {submit}")
@@ -111,11 +112,19 @@ def run_app():
     )
 
 
-@app.route('/plot')
+@app.route('/plot/')
 def plot():
-    return stream_template(
-        "plot.html",
-        title="Weak Values Plot")
+    # return render_template(
+    #     "plot.html",
+    #     title="Weak Values Plot")
+
+    # use when opening the file from the web server only
+    plot_file = open(os.getcwd() + "templates/plot.html", "r+", encoding="utf-8")
+
+    # use when opening the file from the local server only
+    # plot_file = open("templates/plot.html", "r+", encoding="utf-8")
+
+    return ''.join(plot_file.readlines())
 
 
 @app.route('/about')
