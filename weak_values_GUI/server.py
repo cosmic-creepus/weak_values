@@ -134,10 +134,10 @@ def run_app():
 @app.route('/plot/')
 def plot():
     # use when opening the file from the web server only
-    plot_file = open(os.getcwd() + "/weak_values_GUI/templates/plot.html", "r+", encoding="utf-8")
+    plot_file = open(os.getcwd() + "/weak_values_GUI/plot.html", "r+", encoding="utf-8")
 
     # use when opening the file from the local server only
-    # plot_file = open("templates/plot.html", "r+", encoding="utf-8")
+    # plot_file = open("plot.html", "r+", encoding="utf-8")
 
     return ''.join(plot_file.readlines())
 
