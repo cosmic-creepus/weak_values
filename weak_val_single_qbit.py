@@ -1,6 +1,8 @@
 '''Weak values single qubit'''
 
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 hbar = 2
 
@@ -86,7 +88,7 @@ def entangled_state(num_qubits):
     return state
 
 
-def sepstate_custom(theta=None, phi=None):
+def sepstate_custom(theta=None, phi=None, debug=False):
     """
        Generates a random pure quantum state on the Bloch sphere.
 
@@ -105,6 +107,9 @@ def sepstate_custom(theta=None, phi=None):
         np.cos(theta / 2),  # Amplitude of |0⟩
         np.exp(1j * phi) * np.sin(theta / 2)  # Amplitude of |1⟩
     ])
+
+    if debug:
+        print(f"theta: {np.round(theta * 180/np.pi, 2)} | phi: {np.round(phi * 180/np.pi, 2)}")
     return state
 
 
@@ -158,6 +163,11 @@ def WeakValue(j, g, S):
 
     return Wreal, Wimag, g_dot_j, W_complex
 
+
+#Calculate angle between two complex 3-vectors
+def angle_between_vectors(Wa, Wb):
+    return np.round(np.arccos(np.abs(np.vdot(Wa, Wb)) / (np.linalg.norm(Wa) * np.linalg.norm(Wb))) * 180 / np.pi, 2)
+
 # ___________|i> = (|0> + |1>) / √2
 # ____________________↓
 # __________________/__\
@@ -168,43 +178,152 @@ def WeakValue(j, g, S):
 
 ##### |i> is a 2 qubit entangled state ######
 # i = entangled_state(num_qubits=2) # entangled 2 qubit state
-i = np.array([0, 0.6, -.8, 0])
+amplitude_squared = .61
+ratio = np.sqrt(amplitude_squared) / np.sqrt(1 - amplitude_squared)
+print(f"Ratios: {ratio} | {1/ratio}")
+i = np.array([0, np.sqrt(amplitude_squared), -np.sqrt(1 - amplitude_squared), 0])
 # print(f"i: {i}")
 
 # list of theta and phi combinations for up,down for x,y and z directions on the Bloch sphere separately
 list_angles_z = [(0, 0), (np.pi, 0)]
-list_angles_y = [(np.pi / 2, 0), (3 * np.pi / 2, 0)]
+list_angles_y = [(np.pi / 2, np.pi / 2), (np.pi / 2, -np.pi/2)]
 list_angles_x = [(np.pi / 2, 0), (np.pi / 2, np.pi)]
 list_angles = [list_angles_x, list_angles_y, list_angles_z]
+x_z = [(np.pi / 2, 0), (np.pi, 0)]
 
-for angles in list_angles:
-    theta_a, phi_a = angles[0]
-    theta_b, phi_b = angles[1]
-    psi_a = sepstate_custom(theta=theta_a, phi=phi_a)
-    psi_b = sepstate_custom(theta=theta_b, phi=phi_b)
+# for angles in list_angles:
+#     theta_a, phi_a = angles[0]
+#     theta_b, phi_b = angles[1]
+#     psi_a = sepstate_custom(theta=theta_a, phi=phi_a)
+#     psi_b = sepstate_custom(theta=theta_b, phi=phi_b)
+#
+#     f = np.kron(psi_a, psi_b)
+#
+#     Wreal_a, Wimag_a, _, W_a = WeakValue(i, f, SpinOps(q=2))
+#     Wreal_b, Wimag_b, _, W_b = WeakValue(i, f, SpinOpsR(q=2))
+#
+#     print("Sx | Sy | Sz")
+#     print(f"W_a: {W_a}")
+#     print(f"W_b: {W_b}")
+#
+#     for c in range(3):
+#         real = W_a[c].real / W_b[c].real
+#         imag = W_a[c].imag / W_b[c].imag
+#         print(f"Real W_a[{c}]/W_b[{c}]: {real}")
+#         print(f"Imaginary W_a[{c}]/W_b[{c}]: {imag}")
+#
+#     #Calcualte magnitudes or real parts of the weak values
+#     norm_a = np.linalg.norm([val.real for val in W_a])
+#     norm_b = np.linalg.norm([val.real for val in W_b])
+#
+#     #Compute probability of outcome
+#     prob_outcome = np.round(np.abs(np.inner(np.conj(f), i))**2, 3)
+#
+#     print(f"Norm of W_a Real: {norm_a}")
+#     print(f"Norm of W_b Real: {norm_b}")
+#     print(f"Ratio of real norms: {norm_a / norm_b}")
+#
+#     print(f"Probability of outcome: {prob_outcome}")
+#     print(f"Angle between W_a and W_b: {angle_between_vectors(W_a, W_b)} degrees\n")
+
+# X to Y basis
+# phi_start = 0
+# phi_end = np.pi/2 + np.pi/18
+# theta = np.pi/2
+# increment = np.pi/18
+
+# X to Z basis
+# phi_start = np.pi
+# phi_end = 0
+# increment = -np.pi/1800
+# theta_start = np.pi / 2
+# theta_end = 0 - np.pi/1800
+
+# Z to Y basis
+# theta_start = 0
+# theta_end = np.pi / 2 + np.pi/18
+
+# Z to -Z basis 2nd qubit
+theta_start = 0
+theta_end = np.pi + np.pi/180
+increment = np.pi/180
+
+
+# for phi in np.arange(phi_start, phi_end, increment):
+    # theta_a, phi_a = angles[0]
+    # theta_b, phi_b = angles[1]
+
+dict_vals_sweep = {"Real": {0: [], 1: [], 2: []}, "Imaginary": {0: [], 1: [], 2: []}, "Prob": [], "Angle": []}
+
+for theta in np.arange(theta_start, theta_end, increment):
+    print(f"{np.round(theta * 180/np.pi, 2)} degrees")
+    # X to Y basis
+    # psi_a = sepstate_custom(theta=theta, phi=phi)
+    # psi_b = sepstate_custom(theta=theta, phi=np.pi + phi )
+
+    # Z to Y basis
+    # psi_a = sepstate_custom(theta=theta, phi=theta)
+    # psi_b = sepstate_custom(theta=np.pi - theta, phi=0 - theta)
+
+    # X to Z basis
+    # psi_a = sepstate_custom(theta=theta, phi=0, debug=False)
+    # psi_b = sepstate_custom(theta=theta_start + (np.pi/2 - theta), phi=np.pi - 2 * (np.pi/2 - theta), debug=True)
+
+    # Z to -Z basis 2nd qubit
+    psi_a = sepstate_custom(theta=np.pi/2, phi=np.pi, debug=False)
+    psi_b = sepstate_custom(theta=theta, phi=0, debug=False)
+
+    # print(f"psi_a: {psi_a}")
+    # print(f"psi_b: {psi_b}")
+
     f = np.kron(psi_a, psi_b)
-    Wreal_a, Wimag_a, _, W_complex_a = WeakValue(i, f, SpinOps(q=2))
-    Wreal_b, Wimag_b, _, W_complex_b = WeakValue(i, f, SpinOpsR(q=2))
+    # print(f"f: {f}")
 
-    print("Sx | Sy | Sz")
-    print(f"W_complex_a: {W_complex_a}")
-    print(f"W_complex_b: {W_complex_b}")
+    Wreal_a, Wimag_a, _, W_a = WeakValue(i, f, SpinOps(q=2))
+    Wreal_b, Wimag_b, _, W_b = WeakValue(i, f, SpinOpsR(q=2))
 
-    for i in range(3):
-        print(f"Real W_complex_a[{i}]/W_complex_b[{i}]: {W_complex_a[i].real / W_complex_b[i].real}")
+    # print("Sx | Sy | Sz")
+    print(f"W_a: {W_a}")
+    print(f"W_b: {W_b}")
 
-    for i in range(3):
-        print(f"Imaginary W_complex_a[{i}]/W_complex_b[{i}]: {W_complex_a[i].imag / W_complex_b[i].imag}")
+    for c in range(3):
+        real = W_a[c].real / W_b[c].real
+        imag = W_a[c].imag / W_b[c].imag
+        dict_vals_sweep["Real"][c].append(real)
+        dict_vals_sweep["Imaginary"][c].append(imag)
+        print(f"\033[32m Real W_a[{c}]/W_b[{c}]: {real} \033[0m")
+        print(f"\033[32m Imaginary W_a[{c}]/W_b[{c}]: {imag} \033[0m")
 
     #Calcualte magnitudes or real parts of the weak values
-    norm_a = np.linalg.norm([val.real for val in W_complex_a])
-    norm_b = np.linalg.norm([val.real for val in W_complex_b])
+    norm_a = np.linalg.norm([val.real for val in W_a])
+    norm_b = np.linalg.norm([val.real for val in W_b])
 
     #Compute probability of outcome
-    prob_outcome = np.abs(np.inner(np.conj(f), i))**2
+    prob_outcome = np.round(np.abs(np.inner(np.conj(f), i))**2, 3)
+    dict_vals_sweep["Prob"].append(prob_outcome)
 
     print(f"Norm of W_a Real: {norm_a}")
     print(f"Norm of W_b Real: {norm_b}")
     print(f"Ratio of real norms: {norm_a / norm_b}")
 
-    print(f"Probability of outcome: {prob_outcome}\n")
+    print(f"Probability of outcome: {prob_outcome}")
+    print(f"Angle between W_a and W_b: {angle_between_vectors(W_a, W_b)} degrees\n")
+
+# Plot values from dict_vals_sweep against theta
+fig, ax = plt.subplots(3, 1, figsize=(10, 10))
+colors = ["red", "blue", "green"]
+labels = ["X", "Y", "Z"]
+for i in range(3):
+    ax[i].plot(np.arange(theta_start * 180/np.pi, theta_end * 180/np.pi, increment * 180/np.pi), dict_vals_sweep["Real"][i], color=colors[i], label=f"Real {labels[i]}")
+    ax[i].plot(np.arange(theta_start * 180/np.pi, theta_end * 180/np.pi, increment * 180/np.pi), dict_vals_sweep["Imaginary"][i], color=colors[i], linestyle="--", label=f"Imaginary {labels[i]}")
+    ax[i].set_xlabel("Theta")
+    ax[i].set_ylabel("Weak Value Ratio")
+    ax[i].legend()
+    ax[i].grid()
+
+plt.show()
+
+
+# print("\033[31mThis is red text\033[0m")
+# print("\033[32mThis is green text\033[0m")
+# print("\033[34mThis is blue text\033[0m")
