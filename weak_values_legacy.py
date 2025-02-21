@@ -73,7 +73,6 @@ def Unitary(n_hat, q: int = 2, theta: float = 0, right: bool = False):
 
 
 def SpinOps(q: int):
-
     I = np.eye(2)
     for _ in range(q - 2):
         I = np.kron(I, np.eye(2))
@@ -105,7 +104,6 @@ def SpinOpsR(q: int):
 
 
 def SpinOps3rd(q: int):
-
     I = np.eye(2)
     for _ in range(q - 2):
         I = np.kron(I, np.eye(2))
@@ -219,11 +217,12 @@ def U_ex(tau):
 
 
 def Uex_dt_a(t, dt, alpha):
-
     U = np.array([[1, 0, 0, 0],
-                        [0, (1 + np.exp(1j * np.pi * (alpha - t)) - 1j * np.pi * np.exp(1j * np.pi * (alpha - t)) * dt)/2, (1 - np.exp(1j * np.pi * (alpha - t)) + 1j * np.pi * np.exp(1j * np.pi * (alpha - t)) * dt)/2, 0],
-                        [0, (1 - np.exp(1j * np.pi * (alpha - t)) + 1j * np.pi * np.exp(1j * np.pi * (alpha - t)) * dt)/2, (1 + np.exp(1j * np.pi * (alpha - t)) - 1j * np.pi * np.exp(1j * np.pi * (alpha - t)) * dt)/2, 0],
-                        [0, 0, 0, 1]])
+                  [0, (1 + np.exp(1j * np.pi * (alpha - t)) - 1j * np.pi * np.exp(1j * np.pi * (alpha - t)) * dt) / 2,
+                   (1 - np.exp(1j * np.pi * (alpha - t)) + 1j * np.pi * np.exp(1j * np.pi * (alpha - t)) * dt) / 2, 0],
+                  [0, (1 - np.exp(1j * np.pi * (alpha - t)) + 1j * np.pi * np.exp(1j * np.pi * (alpha - t)) * dt) / 2,
+                   (1 + np.exp(1j * np.pi * (alpha - t)) - 1j * np.pi * np.exp(1j * np.pi * (alpha - t)) * dt) / 2, 0],
+                  [0, 0, 0, 1]])
 
     return U, np.linalg.inv(U)
 
@@ -262,7 +261,6 @@ def Uex_dt_a(t, dt, alpha):
 
 
 def weak_val_Uex(i, f, t, alpha, spinors):
-
     weak_val_complex = []
     for spinor in spinors:
         mat = np.matmul(np.conj(inverse_U_ex(tau=alpha - t)), np.matmul(spinor, U_ex(tau=t)))
@@ -311,6 +309,7 @@ def second_derivative_U_ex(tau):
         [0, 0, 0, 0]
     ])
     return second_derivative_matrix
+
 
 def second_derivative_inverse_U_ex(tau):
     exp_term = np.exp(-1j * np.pi * tau)
@@ -371,54 +370,98 @@ def D_tau_second_derivative(tau, alpha, psi_f, psi_i):
 
 # Function to compute s_a(tau)
 def sa(tau, alpha, psi_f, psi_i, spinor):
-    U_inv_alpha_tau = inverse_U_ex(alpha - tau)
+    U_alpha_tau = U_ex(alpha - tau)
     U_tau = U_ex(tau)
     # Initialize s_a for the 3-vector spinor
     s_a_values = np.zeros(3, dtype=complex)
 
     for i in range(3):
-        numerator = np.vdot(psi_f, np.matmul(U_inv_alpha_tau, np.matmul(spinor[i], np.matmul(U_tau, psi_i))))
-        denominator = np.vdot(psi_f, np.matmul(U_inv_alpha_tau, np.matmul(U_tau, psi_i)))
+        numerator = np.vdot(psi_f, np.matmul(U_alpha_tau, np.matmul(spinor[i], np.matmul(U_tau, psi_i))))
+        # denominator = np.vdot(psi_f, np.matmul(U_alpha_tau, np.matmul(U_tau, psi_i)))
+        denominator = np.vdot(psi_f, np.matmul(U_ex(alpha), psi_i))
+
+        # print(f"denominator: {denominator}")
         s_a_values[i] = numerator / denominator
 
     return list(s_a_values)
 
 
-# Function to compute the first and second derivatives of s_a(tau)
-def derivatives(tau, alpha, psi_f, psi_i, spinor):
-    # Compute the necessary matrices
-    U_inv_alpha_tau = inverse_U_ex(alpha - tau)
-    U_tau = U_ex(tau)
-    dU_tau = derivative_U_ex(tau)
-    dU_inv_alpha_tau = derivative_inverse_U_ex(alpha - tau)
+def U_ex_prime(alpha):
+    exp_alpha = np.exp(1j * np.pi * alpha)
+    U_prime = np.array([
+        [0, 0, 0, 0],
+        [0, 1j * np.pi * exp_alpha / 2, -1j * np.pi * exp_alpha / 2, 0],
+        [0, -1j * np.pi * exp_alpha / 2, 1j * np.pi * exp_alpha / 2, 0],
+        [0, 0, 0, 0]
+    ], dtype=complex)
+    return U_prime
 
-    # Initialize arrays to store the results for each component of the spinor
-    ds_a_tau = np.zeros(3, dtype=complex)
-    d2s_a_tau = np.zeros(3, dtype=complex)
 
-    # Loop over each component of the spinor (assuming spinor has 3 components)
-    for i in range(3):
-        # Numerator and denominator for the i-th component
-        N_tau = np.vdot(psi_f, np.matmul(U_inv_alpha_tau, np.matmul(spinor[i], np.matmul(U_tau, psi_i))))
-        D_tau = np.vdot(psi_f, np.matmul(U_inv_alpha_tau, np.matmul(U_tau, psi_i)))
+# Define the second derivative of U_ex[alpha] w.r.t. alpha
+def U_ex_double_prime(alpha):
+    exp_alpha = np.exp(1j * np.pi * alpha)
+    U_double_prime = np.array([
+        [0, 0, 0, 0],
+        [0, -np.pi ** 2 * exp_alpha / 2, np.pi ** 2 * exp_alpha / 2, 0],
+        [0, np.pi ** 2 * exp_alpha / 2, -np.pi ** 2 * exp_alpha / 2, 0],
+        [0, 0, 0, 0]
+    ], dtype=complex)
+    return U_double_prime
 
-        # First derivative of the numerator and denominator
-        dN_tau = np.vdot(psi_f, np.matmul(dU_inv_alpha_tau, np.matmul(spinor[i], np.matmul(U_tau, psi_i)))) + \
-                 np.vdot(psi_f, np.matmul(U_inv_alpha_tau, np.matmul(spinor[i], np.matmul(dU_tau, psi_i))))
-        dD_tau = np.vdot(psi_f, np.matmul(dU_inv_alpha_tau, np.matmul(U_tau, psi_i))) + \
-                 np.vdot(psi_f, np.matmul(U_inv_alpha_tau, np.matmul(dU_tau, psi_i)))
 
-        # First derivative of s_a(tau) for the i-th component
-        ds_a_tau[i] = (dN_tau * D_tau - N_tau * dD_tau) / (D_tau ** 2)
+# Function to compute the first and second derivatives for each component of the spinor
+def compute_derivatives(tau, alpha, psi_f, psi_i, spinors):
+    # Ensure that psi_f and psi_i are 1D vectors
+    psi_f = psi_f.flatten()
+    psi_i = psi_i.flatten()
 
-        # Second derivative of the numerator and denominator
-        ddN_tau = N_tau_second_derivative(tau, alpha, psi_f, psi_i, spinor[i])
-        ddD_tau = D_tau_second_derivative(tau, alpha, psi_f, psi_i)
+    first_derivatives = []
+    second_derivatives = []
 
-        # Second derivative of s_a(tau) for the i-th component
-        d2s_a_tau[i] = (ddN_tau * D_tau - 2 * dN_tau * dD_tau + 2 * N_tau * dD_tau ** 2 - N_tau * ddD_tau) / (D_tau ** 2)
+    # Loop over each component of the spinor (assuming there are 3 components)
+    for spinor in spinors:
+        # Compute U_ex[alpha - tau] and U_ex[tau]
+        U_alpha_tau = U_ex(alpha - tau)
+        U_tau = U_ex(tau)
 
-    return list(ds_a_tau), list(d2s_a_tau)
+        # Compute the derivatives U_alpha_tau_prime and U_tau_prime correctly
+        U_alpha_tau_prime = -U_ex_prime(alpha - tau)  # derivative w.r.t. tau
+        U_tau_prime = U_ex_prime(tau)  # derivative w.r.t. tau
+
+        # Compute the second derivatives U_alpha_tau_double_prime and U_tau_double_prime
+        U_alpha_tau_double_prime = U_ex_double_prime(alpha - tau)
+        U_tau_double_prime = U_ex_double_prime(tau)
+
+        # Matrix multiplication result (4x1 vector) using np.matmul
+        result = np.matmul(U_alpha_tau, np.matmul(spinor, np.matmul(U_tau, psi_i)))
+
+        # Numerator for N(tau) using np.matmul
+        N_tau = np.matmul(psi_f.conj(), result)
+
+        # Denominator D (constant for both derivatives) using np.matmul
+        D = np.matmul(psi_f.conj(), np.matmul(U_ex(alpha), psi_i))
+
+        # First derivative of the numerator using np.matmul
+        term1 = np.matmul(psi_f.conj(), np.matmul(U_alpha_tau_prime, np.matmul(spinor, np.matmul(U_tau, psi_i))))
+        term2 = np.matmul(psi_f.conj(), np.matmul(U_alpha_tau, np.matmul(spinor, np.matmul(U_tau_prime, psi_i))))
+
+        first_derivative = (term1 + term2) / D
+
+        # Second derivative of the numerator using np.matmul
+        term1_second = np.matmul(psi_f.conj(),
+                                 np.matmul(U_alpha_tau_double_prime, np.matmul(spinor, np.matmul(U_tau, psi_i))))
+        term2_second = np.matmul(psi_f.conj(),
+                                 np.matmul(U_alpha_tau_prime, np.matmul(spinor, np.matmul(U_tau_prime, psi_i))))
+        term3_second = np.matmul(psi_f.conj(),
+                                 np.matmul(U_alpha_tau, np.matmul(spinor, np.matmul(U_tau_double_prime, psi_i))))
+
+        second_derivative = (term1_second + 2 * term2_second + term3_second) / D
+
+        # Store the results for this spinor component
+        first_derivatives.append(first_derivative)
+        second_derivatives.append(second_derivative)
+
+    return first_derivatives, second_derivatives
 
 
 # To generate a table
@@ -536,12 +579,17 @@ def entangled_state(num_qubits):
         CNOT = cnot_matrix(num_qubits, i, i + 1)
         state = CNOT @ state
 
+    # TODO - return how entangled the state is (concurrence)
+    # TODO - may need to add a knob to control the entanglement level
     return state
 
 
 # Mostly follows the same structure used for preparing the initial state
-def sepstate(num_qubits: int = 2):
-    """ :param num_qubits - number of qubits"""
+def sepstate(num_qubits: int = 2, return_separate_qubits: bool = False):
+    """ :param num_qubits - number of qubits
+        :param return_separate_qubits - if True, return the separate qubits used to generate the separable state
+    """
+
     initial = []  # This arrays will be single qubit state used to generate a separable 2-qubit state
     for _ in range(num_qubits):  # To generate n qubits
         temp_qubit = []
@@ -554,11 +602,37 @@ def sepstate(num_qubits: int = 2):
         initial.append(temp_qubit)
 
     sep = np.kron(initial[0], initial[1])
-    for _ in range(q - 2):
+    for _ in range(num_qubits - 2):
         sep = np.kron(sep, initial[2])  # Tensor product the two qubits to make separable final state
 
     sepnorm = sep / np.linalg.norm(sep)  # Normalizing our state
-    return sepnorm
+
+    if return_separate_qubits:
+        return sepnorm, initial
+    else:
+        return sepnorm
+
+
+def sepstate_custom(theta=None, phi=None):
+    """
+       Generates a random pure quantum state on the Bloch sphere.
+
+       Returns:
+           np.ndarray: A 2D complex vector representing the quantum state |ψ⟩.
+       """
+    # Generate random angles for the Bloch sphere
+    if theta is None:
+        theta = np.arccos(1 - 2 * np.random.rand())  # Uniformly distributed theta in [0, π]
+
+    if phi is None:
+        phi = 2 * np.pi * np.random.rand()  # Uniformly distributed phi in [0, 2π)
+
+    # Construct the state |ψ⟩
+    state = np.array([
+        np.cos(theta / 2),  # Amplitude of |0⟩
+        np.exp(1j * phi) * np.sin(theta / 2)  # Amplitude of |1⟩
+    ])
+    return state
 
 
 def sepstate_3qubit():
@@ -1620,6 +1694,7 @@ def evolve_state(i, f, U):
 
     return j, g
 
+
 def WeakValue(j, g, S, side: str = None):
     """ Computes weak values for j and g evolution states (at the same step).
   :param j - forward evolved i state
@@ -1634,12 +1709,8 @@ def WeakValue(j, g, S, side: str = None):
     Wreal = []  # Array for weak value before the gate (real part)
     Wimag = []  # Array for weak value before the gate (imaginary part)
     W_complex = []
-    if side == "left":
-        g_dot_j = np.around(np.inner(np.conj(g), j), decimals=7)
-    elif side == "right":
-        g_dot_j = np.around(np.inner(np.conj(g), j), decimals=7)
-    else:
-        raise ValueError("Must input a side! Either left of right")
+
+    g_dot_j = np.inner(np.conj(g), j)
 
     for w in range(3):  # To generate three components for weak values for each coordinate axis, x, y, and, z
         # Using np.conjugate and np.dot, we can code the formula for weak values. S[w] allows us to use each spin operator in
@@ -1815,6 +1886,7 @@ def calc_velocity3(j, g, iterations, rot_step: int, q: int = 2):
 def nroot_swap_weak_value_vectors(i, f, q: int, n: int,
                                   swap_iter: float,
                                   rot_step: int,
+                                  separable: bool = False,
                                   theta: float = 1 / 200,
                                   dt: float = 0.000001,
                                   one_qbit_rotation: bool = False,
@@ -1936,7 +2008,6 @@ def nroot_swap_weak_value_vectors(i, f, q: int, n: int,
     sa_2nd_derivative_all = []
     sb_2nd_derivative_all = []
 
-
     velocity_before_rot_init, _, weak_vals_before_init = calc_velocity(j=evolved_j[0], g=evolved_g[0], q=q)
     velocity_after_rot_init, _, weak_vals_after_init = calc_velocity(j=evolved_j[1], g=evolved_g[1], q=q)
 
@@ -1974,13 +2045,13 @@ def nroot_swap_weak_value_vectors(i, f, q: int, n: int,
                 #  '|'] + [str(x) for x in velocity_before_rot2[0]] + [' ', str(vel_mag_before2[0])],
                 ["Velocity after rotation LEFT (Re)"] + [str(x) for x in velocity_after_rot[0]] + [' ', str(
                     vel_mag_after[0])] + [' ', vel_percent_diff[0]],
-                #'|'] + [str(x) for x in velocity_after_rot2[0]] + [' ', str(vel_mag_after2[0])] + [' ', vel_percent_diff2[0]],
+                # '|'] + [str(x) for x in velocity_after_rot2[0]] + [' ', str(vel_mag_after2[0])] + [' ', vel_percent_diff2[0]],
                 ["Velocity before rotation LEFT (Im)"] + [str(x) for x in velocity_before_rot[1]] + [' ', str(
                     vel_mag_before[1]), ' ', ' '],
-                #'|'] + [str(x) for x in velocity_before_rot2[1]] + [' ', str(vel_mag_before2[1])],
+                # '|'] + [str(x) for x in velocity_before_rot2[1]] + [' ', str(vel_mag_before2[1])],
                 ["Velocity after rotation LEFT (Im)"] + [str(x) for x in velocity_after_rot[1]] + [' ', str(
                     vel_mag_after[1])] + [' ', vel_percent_diff[1]],
-                #'|'] + [str(x) for x in velocity_after_rot2[1]] + [' ', str(vel_mag_after2[1])] + [' ', vel_percent_diff2[1]],
+                # '|'] + [str(x) for x in velocity_after_rot2[1]] + [' ', str(vel_mag_after2[1])] + [' ', vel_percent_diff2[1]],
                 # ["Velocity before rotation RIGHT (Re)"] + [str(x) for x in velocity_before_rot[2]] + [' ', str(vel_mag_before[2])],
                 # ["Velocity after rotation RIGHT (Re)"] + [str(x) for x in velocity_after_rot[2]] + [' ', str(vel_mag_after[2])] + [' ', vel_percent_diff[2]],
                 # ["Velocity before rotation RIGHT (Im)"] + [str(x) for x in velocity_before_rot[3]] + [' ', str(vel_mag_before[3])],
@@ -1988,26 +2059,31 @@ def nroot_swap_weak_value_vectors(i, f, q: int, n: int,
                 ]
 
     for nr in range(0, l):
-
         WVleft, WVleft_imag, g_dot_j_left, WV_complex_left = WeakValue(evolved_j[nr], evolved_g[nr], SpinOps(q=q),
                                                                        side="left")
         WVright, WVright_imag, g_dot_j_right, WV_complex_right = WeakValue(evolved_j[nr], evolved_g[nr], SpinOpsR(q=q),
                                                                            side="right")
 
         WV3rd, WV3rd_imag, g_dot_j_3rd, WV_complex_3rd = WeakValue(evolved_j[nr], evolved_g[nr], SpinOps3rd(q=q),
-                                                                           side="right")
+                                                                   side="right")
 
         # Calc weak values with eq. 12 and 13 from https://www.overleaf.com/project/66528f529867f6c1ec0b1260
         # initial values for t and alpha are 0 and 1, respectively, corresponding to the initial states |i> and |f>
         # sa_complex = weak_val_Uex(i=i, f=f, t=1 / (2 ** n) * nr, alpha=1 / (2 ** n) * (iterations - 1), spinors=SpinOps(q=q))
-        sa_complex = sa(psi_i=i, psi_f=f, tau=1 / (2 ** n) * nr, alpha=1 / (2 ** n) * (iterations - 1), spinor=SpinOps(q=q))
+        sa_complex = sa(psi_i=i, psi_f=f, tau=1 / (2 ** n) * nr, alpha=1 / (2 ** n) * (iterations - 1),
+                        spinor=SpinOps(q=q))
         sa_complex_all.append(sa_complex)
         # sb_complex = weak_val_Uex(i=i, f=f, t=1 / (2 ** n) * nr, alpha=1 / (2 ** n) * (iterations - 1), spinors=SpinOpsR(q=q))
-        sb_complex = sa(psi_i=i, psi_f=f, tau=1 / (2 ** n) * nr, alpha=1 / (2 ** n) * (iterations - 1), spinor=SpinOpsR(q=q))
+        sb_complex = sa(psi_i=i, psi_f=f, tau=1 / (2 ** n) * nr, alpha=1 / (2 ** n) * (iterations - 1),
+                        spinor=SpinOpsR(q=q))
         sb_complex_all.append(sb_complex)
 
-        first_derivative_sa, second_derivative_sa = derivatives(tau=1 / (2 ** n) * nr, alpha=1 / (2 ** n) * (iterations - 1), psi_f=f, psi_i=i, spinor=SpinOps(q=q))
-        first_derivative_sb, second_derivative_sb = derivatives(tau=1 / (2 ** n) * nr, alpha=1 / (2 ** n) * (iterations - 1), psi_f=f, psi_i=i, spinor=SpinOpsR(q=q))
+        first_derivative_sa, second_derivative_sa = compute_derivatives(tau=1 / (2 ** n) * nr,
+                                                                        alpha=1 / (2 ** n) * (iterations - 1), psi_f=f,
+                                                                        psi_i=i, spinors=SpinOps(q=q))
+        first_derivative_sb, second_derivative_sb = compute_derivatives(tau=1 / (2 ** n) * nr,
+                                                                        alpha=1 / (2 ** n) * (iterations - 1), psi_f=f,
+                                                                        psi_i=i, spinors=SpinOpsR(q=q))
 
         # sa_derivative, sa_2nd_derivative = derivative_weak_val(i=i, f=f, t=1 / (2 ** n) * nr, dt=dt, alpha=1 / (2 ** n) * (iterations - 1), spinors=SpinOps(q=q))
         sa_derivative_all.append(first_derivative_sa)
@@ -2054,13 +2130,12 @@ def nroot_swap_weak_value_vectors(i, f, q: int, n: int,
     # print(f"sb_2nd_derivative_fd_all: {sb_2nd_derivative_fd_all}")
 
     # Test eqs (14) and (15) https://www.overleaf.com/project/66528f529867f6c1ec0b1260
-    eq_14 = np.array(sa_2nd_derivative_all) / (np.array(sb_complex_all) - np.array(sa_complex_all))
+    eq_14 = (np.array(sa_2nd_derivative_all) / (np.array(sb_complex_all) - np.array(sa_complex_all))).real
     # eq_14 = sa_2nd_derivative_all[0][1] / (sb_complex_all[0][1] - sb_complex_all[0][1])
     print(f"eq_14: {eq_14}")
     eq_15 = np.array(sb_2nd_derivative_all) / (np.array(sa_complex_all) - np.array(sb_complex_all))
     print(f"eq_15: {eq_15}")
     print(f"np.pi ** 2 / 2: {np.pi ** 2 / 2}")
-
 
     ### Test Rod's Spinors for calculating weak values ###
     gen_weak_values_all_left = []  # list of left weak value vectors (list) for each step
@@ -2215,14 +2290,15 @@ def nroot_swap_weak_value_vectors(i, f, q: int, n: int,
     weak_values_all_left_imag = list(np.around(weak_values_all_left_imag, decimals=4))
     weak_values_all_right_imag = list(np.around(weak_values_all_right_imag, decimals=4))
 
-    # print(f"f_dot_i_left: {f_dot_i_left}")
-    # print(f"f_dot_i_right: {f_dot_i_right}")
+    print(f"f_dot_i_left: {f_dot_i_left}")
+    print(f"f_dot_i_right: {f_dot_i_right}")
     # print(f"Average of <f|i> over all gate steps: {sum(f_dot_i_left)/len(f_dot_i_left)}")
     # print(f"< final f| initial i> {f_dot_i_left[0]} | < initial f| final i> {f_dot_i_left[-1]}")
 
     plot_s1_s2_relation(weak_val_all_complex_left=weak_val_all_complex_left,
                         weak_val_all_complex_right=weak_val_all_complex_right,
                         concurrance=velocity_check,
+                        separable=separable,
                         show_plot=True)
 
     # table = ListTable()
@@ -2268,7 +2344,7 @@ def plot_velocity_errors(velocity_check: dict, separable: bool, show_plot: bool 
         plt.show()
 
 
-def plot_s1_s2_relation(weak_val_all_complex_left, weak_val_all_complex_right, concurrance: dict,
+def plot_s1_s2_relation(weak_val_all_complex_left, weak_val_all_complex_right, concurrance: dict, separable: bool,
                         show_plot: bool = False):
     s_dot_s_left = [np.dot(s, s) for s in weak_val_all_complex_left]
     s_dot_s_left_real = [z.real for z in s_dot_s_left]
@@ -2634,9 +2710,10 @@ def inverse_weak_value(W_complex, S, side, j_guess, g_guess):
     constraints_imag = [{'type': 'eq', 'fun': lambda params: constraint_norm(params)[1]}]
 
     # Optimize the parameters to minimize the error function using BFGS
-    result_real = minimize(weak_value_error, initial_guess, args=(W_complex, S, side, 'real'), method='SLSQP', constraints=constraints_real)
-    result_imag = minimize(weak_value_error, initial_guess, args=(W_complex, S, side, 'imag'), method='SLSQP', constraints=constraints_imag)
-
+    result_real = minimize(weak_value_error, initial_guess, args=(W_complex, S, side, 'real'), method='SLSQP',
+                           constraints=constraints_real)
+    result_imag = minimize(weak_value_error, initial_guess, args=(W_complex, S, side, 'imag'), method='SLSQP',
+                           constraints=constraints_imag)
 
     # Extract the optimized parameters
     optimized_params_real = result_real.x
@@ -2662,7 +2739,7 @@ def test_sho_eq(j, g, q):
     _, _, _, WV_complex = WeakValue(j=j, g=g, S=SpinOps(q=q), side='left')
     j_inferred, g_inferred = inverse_weak_value(W_complex=WV_complex, S=SpinOps(q=q), side='left', j_guess=j, g_guess=g)
 
-    #TODO do equality test for the j and j_inferred are the same; same for g and g_inferred to 3 decimal places
+    # TODO do equality test for the j and j_inferred are the same; same for g and g_inferred to 3 decimal places
     for j, j_inferred in zip(j, j_inferred):
         is_close = cm.isclose(j, j_inferred, abs_tol=1e-2)
         print(f"j: {j} | j_inferred: {j_inferred} | is_close: {is_close}")
@@ -2673,432 +2750,473 @@ def test_sho_eq(j, g, q):
 # # print(np.matmul(U, np.array([0, 1, 1, 0])))
 # print(f"U 4x4 : {U}")
 
-ellipse_dict_all = []
+def main():
+    ###############################
+    ##### Single qubit test #######
+    ###############################
 
-time_start = time.time()
-num_state = 10  # number of states to iterate
-success = []
-a_val = []
-csv_data = []
-run = 0
-while run < num_state < num_state * 5:
-    run += 1
-    print(f"Run: {run}")
+    ##### |i> 2 qubit entangled state ######
+    i = entangled_state(num_qubits=2)  # entangled 2 qubit state
+    phi_a = sepstate_custom(theta=np.pi / 2, phi=0)
+    phi_b = sepstate_custom(theta=np.pi / 2, phi=np.pi / 2)
+    fa = np.kron(phi_a, np.array([1 + 0j, 0 + 0j]))
+    # fb = np.kron(np.array([0 + 0j, 1 + 0j]), phi_a)
+    fb = np.kron(phi_b, np.array([1 + 0j, 0 + 0j]))
+    Wreal_a, Wimag_a, _, W_complex_a = WeakValue(i, fa, SpinOps(q=2), side='left')
+    Wreal_b, Wimag_b, _, W_complex_b = WeakValue(i, fb, SpinOps(q=2), side='left')
 
-    separable = False
-    q = 2 # number of qubits
-    if separable:
-        i = sepstate(num_qubits=q)
-        f = sepstate(num_qubits=q)
-    else:
-        i = entangled_state(num_qubits=q)
-        f = entangled_state(num_qubits=q)
+    T = 1j * np.array([[0, -1j],
+                       [1j, 0]])
 
-    # i = sepstate(q=q)
-    # f = entangled_state()
+    W_complex_T = []
+    for i, elem in enumerate(Wreal_a):
+        wa = np.array([Wreal_a[i], Wimag_a[i]])
+        W_complex_T.append(np.matmul(T, np.transpose(np.conj(wa))))
 
-    # i = [0.27045063 - 0.2859144j,   0.70209763 - 0.47333935j, -0.14969228 + 0.01877584j,
-    #         -0.32311833 - 0.03086132j]
-    # f = [0.22647628 + 0.26671954j, -0.02590712 - 0.03933735j, -0.92630863 + 0.04150596j,
-    #         0.12445244 + 0.00957862j]
-    # theta_2 = np.pi/4
-    # i = np.kron(np.array([1, 0]), np.array([np.cos(theta_2/2), np.sin(theta_2/2)]))
-    # f = np.kron(1/np.sqrt(2) * np.array([1, 1]), 1/np.sqrt(2) * np.array([1, 1j]))
+    ##### |i> single qubit state ######
+    # Wreal_fab, Wimag_fab, _, W_complex_fab = WeakValue(fa, fb, SpinOps(q=2), side='left')
+    # Wreal_fba, Wimag_fba, _, W_complex_fba = WeakValue(fb, fa, SpinOps(q=2), side='left')
 
-    f_dot_i = np.dot(np.conj(f), i)
-    # norm_f_dot_i = (np.conj(f_dot_i) * f_dot_i).real
-    # while norm_f_dot_i < .85:
-    #     norm_f_dot_i = (np.conj(f_dot_i) * f_dot_i).real
-    # print(f"|<f|i>|^2: {norm_f_dot_i}")
+    print("Sx | Sy | Sz")
+    print(f"W_complex_a: {W_complex_a}")
+    # print(f"W_complex_fab: {W_complex_fab}\n")
+    print(f"W_complex_b: {W_complex_b}")
+    # print(f"W_complex_fba: {W_complex_fba}")
+    print(f"W_complex_T: {W_complex_T}")
 
-    # Check if f is an eigenvector of the Observable
-    # attemps = 1
-    # two_eigenval = [False]
-    # while not all(two_eigenval) and attemps <= 1000:
-    #     f = sepstate()
-    #     eigen_states = []
-    #     for spinor in SpinOps():
-    #         eigen_states.append(np.matmul(spinor, f))
-    #
-    #     # print(f"Is f an eigen vector of O? Must be close to abs(1)")
-    #     dot_prods = []
-    #     for c, state in enumerate(eigen_states):
-    #         dot_prods.append(np.dot(np.conj(f), state))
-    #         if cm.isclose(abs(dot_prods[-1]), 1, rel_tol=.05):
-    #             two_eigenval.append(True)
-    #
-    #     attemps += 1
-    #
-    # if attemps > 1000:
-    #     print("Failed to generate an eigen state of O for f!")
-    # else:
-    #     print("Generated an eigen state of O for f! SUCCESS!")
+    ellipse_dict_all = []
+    time_start = time.time()
+    num_state = 1  # number of states to iterate
+    success = []
+    a_val = []
+    csv_data = []
+    run = 0
+    while run < num_state < num_state * 5:
+        run += 1
+        print(f"Run: {run}")
 
-    n = 5  # power of root swap (2^n)
-    single_qbit_rotation = False
-    theta = 0  #1/20
-    swap_iter = 1.0  # 1.0 - single SWAP; 2.0 - two SWAPs which goes back to initial state
-    rot_step = int(2 ** n / 2)
+        separable = True
+        q = 2  # number of qubits
+        if separable:
+            i = sepstate(num_qubits=q)
+            f = sepstate(num_qubits=q)
+        else:
+            i = entangled_state(num_qubits=q)
+            f = entangled_state(num_qubits=q)
 
-    init_state = f"Initial state: {i}"
-    final_state = f"Final state: {f}"
-    print("\n" + init_state)
-    print(final_state)
-    csv_data += [[" "],
-                 [f"Run {run} | Power of root swap {n}"],
-                 [init_state],
-                 [final_state],
-                 # [' ', ' ', ' ', ' ', ' ', ' ', 'Method 1', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'Method 2'],
-                 [' ', 'X', 'Y', 'Z', ' ', 'Velocity Magnitude', ' ',
-                  'Velocity Percent Diff']]  #, '|', 'X', 'Y', 'Z', ' ', 'Velocity Magnitude', ' ', 'Velocity Percent Diff']]
+        # i = sepstate(q=q)
+        # f = entangled_state()
 
-    # First iteration of weak values and second guess
-    data_csv = [" "]
-    (weak_values_all_left_real,
-     weak_values_all_right_real,
-     weak_values_all_left_imag,
-     weak_values_all_right_imag,
-     f_dot_i_left,
-     weak_vals_close,
-     data_csv,
-     velocity_check) = nroot_swap_weak_value_vectors(q=q,
-                                                     i=i,
-                                                     f=f,
-                                                     n=n,
-                                                     theta=theta,
-                                                     swap_iter=swap_iter,
-                                                     rot_step=rot_step,
-                                                     one_qbit_rotation=single_qbit_rotation)
+        # i = [0.27045063 - 0.2859144j,   0.70209763 - 0.47333935j, -0.14969228 + 0.01877584j,
+        #         -0.32311833 - 0.03086132j]
+        # f = [0.22647628 + 0.26671954j, -0.02590712 - 0.03933735j, -0.92630863 + 0.04150596j,
+        #         0.12445244 + 0.00957862j]
+        # theta_2 = np.pi/4
+        # i = np.kron(np.array([1, 0]), np.array([np.cos(theta_2/2), np.sin(theta_2/2)]))
+        # f = np.kron(1/np.sqrt(2) * np.array([1, 1]), 1/np.sqrt(2) * np.array([1, 1j]))
 
-    rotation_axis = [weak_values_all_left_real[rot_step]]
-    # print(f"weak_vals_close: {weak_vals_close}")
+        f_dot_i = np.dot(np.conj(f), i)
+        # norm_f_dot_i = (np.conj(f_dot_i) * f_dot_i).real
+        # while norm_f_dot_i < .85:
+        #     norm_f_dot_i = (np.conj(f_dot_i) * f_dot_i).real
+        # print(f"|<f|i>|^2: {norm_f_dot_i}")
 
-    if single_qbit_rotation:
-        trials = 1
-        max_trials = 10
+        # Check if f is an eigenvector of the Observable
+        # attemps = 1
+        # two_eigenval = [False]
+        # while not all(two_eigenval) and attemps <= 1000:
+        #     f = sepstate()
+        #     eigen_states = []
+        #     for spinor in SpinOps():
+        #         eigen_states.append(np.matmul(spinor, f))
+        #
+        #     # print(f"Is f an eigen vector of O? Must be close to abs(1)")
+        #     dot_prods = []
+        #     for c, state in enumerate(eigen_states):
+        #         dot_prods.append(np.dot(np.conj(f), state))
+        #         if cm.isclose(abs(dot_prods[-1]), 1, rel_tol=.05):
+        #             two_eigenval.append(True)
+        #
+        #     attemps += 1
+        #
+        # if attemps > 1000:
+        #     print("Failed to generate an eigen state of O for f!")
+        # else:
+        #     print("Generated an eigen state of O for f! SUCCESS!")
 
-        while not weak_vals_close and trials < max_trials:
-            print(f"Rotation axis: {weak_values_all_left_real[rot_step]}")
+        n = 5  # power of root swap (2^n)
+        single_qbit_rotation = False
+        theta = 0  # 1/20
+        swap_iter = 1.0  # 1.0 - single SWAP; 2.0 - two SWAPs which goes back to initial state
+        rot_step = int(2 ** n / 2)
 
-            (weak_values_all_left_real,
-             weak_values_all_right_real,
-             weak_values_all_left_imag,
-             weak_values_all_right_imag,
-             f_dot_i_left,
-             weak_vals_close, data_csv, velocity_check) = nroot_swap_weak_value_vectors(q=q,
-                                                                                        i=i,
-                                                                                        f=f,
-                                                                                        n=n,
-                                                                                        theta=theta,
-                                                                                        swap_iter=swap_iter,
-                                                                                        rot_step=rot_step,
-                                                                                        one_qbit_rotation=single_qbit_rotation,
-                                                                                        n_hat=weak_values_all_left_real[
-                                                                                            rot_step])
-            rotation_axis.append(weak_values_all_left_real[rot_step])
-            trials += 1
+        init_state = f"Initial state: {i}"
+        final_state = f"Final state: {f}"
+        print("\n" + init_state)
+        print(final_state)
+        csv_data += [[" "],
+                     [f"Run {run} | Power of root swap {n}"],
+                     [init_state],
+                     [final_state],
+                     # [' ', ' ', ' ', ' ', ' ', ' ', 'Method 1', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'Method 2'],
+                     [' ', 'X', 'Y', 'Z', ' ', 'Velocity Magnitude', ' ',
+                      'Velocity Percent Diff']]  # , '|', 'X', 'Y', 'Z', ' ', 'Velocity Magnitude', ' ', 'Velocity Percent Diff']]
 
-            # Check the last 2 rotation axis; if the same then stop loop
-            same_axis = True
-            for c, val_last in enumerate(rotation_axis[-1]):
-                if val_last != rotation_axis[-2][c]:
-                    same_axis = False
+        # First iteration of weak values and second guess
+        data_csv = [" "]
+        (weak_values_all_left_real,
+         weak_values_all_right_real,
+         weak_values_all_left_imag,
+         weak_values_all_right_imag,
+         f_dot_i_left,
+         weak_vals_close,
+         data_csv,
+         velocity_check) = nroot_swap_weak_value_vectors(q=q,
+                                                         i=i,
+                                                         f=f,
+                                                         n=n,
+                                                         theta=theta,
+                                                         swap_iter=swap_iter,
+                                                         rot_step=rot_step,
+                                                         one_qbit_rotation=single_qbit_rotation)
+
+        rotation_axis = [weak_values_all_left_real[rot_step]]
+        # print(f"weak_vals_close: {weak_vals_close}")
+
+        if single_qbit_rotation:
+            trials = 1
+            max_trials = 10
+
+            while not weak_vals_close and trials < max_trials:
+                print(f"Rotation axis: {weak_values_all_left_real[rot_step]}")
+
+                (weak_values_all_left_real,
+                 weak_values_all_right_real,
+                 weak_values_all_left_imag,
+                 weak_values_all_right_imag,
+                 f_dot_i_left,
+                 weak_vals_close, data_csv, velocity_check) = nroot_swap_weak_value_vectors(q=q,
+                                                                                            i=i,
+                                                                                            f=f,
+                                                                                            n=n,
+                                                                                            theta=theta,
+                                                                                            swap_iter=swap_iter,
+                                                                                            rot_step=rot_step,
+                                                                                            one_qbit_rotation=single_qbit_rotation,
+                                                                                            n_hat=
+                                                                                            weak_values_all_left_real[
+                                                                                                rot_step])
+                rotation_axis.append(weak_values_all_left_real[rot_step])
+                trials += 1
+
+                # Check the last 2 rotation axis; if the same then stop loop
+                same_axis = True
+                for c, val_last in enumerate(rotation_axis[-1]):
+                    if val_last != rotation_axis[-2][c]:
+                        same_axis = False
+                        break
+
+                if same_axis:
                     break
 
-            if same_axis:
-                break
+            # print(f"rotation_axis: {rotation_axis}")
 
-        # print(f"rotation_axis: {rotation_axis}")
+            if trials < max_trials:
+                print(f"Iteration converged after {trials} steps")
+                csv_data += data_csv
+            else:
+                print("Iteration didn't converge!")
+                csv_data += [["Iteration didn't converge!"]]
 
-        if trials < max_trials:
-            print(f"Iteration converged after {trials} steps")
-            csv_data += data_csv
-        else:
-            print("Iteration didn't converge!")
-            csv_data += [["Iteration didn't converge!"]]
+                num_state += 1
+                print(f"num_state: {num_state}")
 
-            num_state += 1
-            print(f"num_state: {num_state}")
+            print(f"data_csv: {data_csv}")
 
-        print(f"data_csv: {data_csv}")
+            # csv_data.append([" "])
 
-        # csv_data.append([" "])
+        ellipse_main = {"i": i, "f": f, "root_power": n}
 
-    ellipse_main = {"i": i, "f": f, "root_power": n}
+        print(f"Check if <f|i> is the same at every step of the n-root SWAP: {check(f_dot_i_left)}")
 
-    print(f"Check if <f|i> is the same at every step of the n-root SWAP: {check(f_dot_i_left)}")
+        # split weak values into 2 sets if introducing a rotation
+        # if single_qbit_rotation:
+        #     before_rotation = [weak_values_all_left_real[:rot_step], weak_values_all_right_real[:rot_step], weak_values_all_left_imag[:rot_step], weak_values_all_right_imag[:rot_step]]
+        #     after_rotation = [weak_values_all_left_real[rot_step:], weak_values_all_right_real[rot_step:], weak_values_all_left_imag[rot_step:], weak_values_all_right_imag[rot_step:]]
 
-    # split weak values into 2 sets if introducing a rotation
-    # if single_qbit_rotation:
-    #     before_rotation = [weak_values_all_left_real[:rot_step], weak_values_all_right_real[:rot_step], weak_values_all_left_imag[:rot_step], weak_values_all_right_imag[:rot_step]]
-    #     after_rotation = [weak_values_all_left_real[rot_step:], weak_values_all_right_real[rot_step:], weak_values_all_left_imag[rot_step:], weak_values_all_right_imag[rot_step:]]
+        # for c, weak_vals in enumerate([before_rotation, after_rotation]):
+        #
+        #     rot_msg = 'BEFORE' if c == 0 else 'AFTER'
+        #     print(rot_msg + " rotation")
 
-    # for c, weak_vals in enumerate([before_rotation, after_rotation]):
-    #
-    #     rot_msg = 'BEFORE' if c == 0 else 'AFTER'
-    #     print(rot_msg + " rotation")
+        # weak_values_all_left_real, weak_values_all_right_real, weak_values_all_left_imag, weak_values_all_right_imag = weak_vals
 
-    # weak_values_all_left_real, weak_values_all_right_real, weak_values_all_left_imag, weak_values_all_right_imag = weak_vals
-
-    plot_3d_radius(weak_values_left=weak_values_all_left_real, weak_values_right=weak_values_all_right_real,
-                   weak_values_left_imag=weak_values_all_left_imag, weak_values_right_imag=weak_values_all_right_imag,
-                   show_plot=False)
-
-    plot_complex_plane(weak_values_left=weak_values_all_left_real, weak_values_right=weak_values_all_right_real,
+        plot_3d_radius(weak_values_left=weak_values_all_left_real, weak_values_right=weak_values_all_right_real,
                        weak_values_left_imag=weak_values_all_left_imag,
-                       weak_values_right_imag=weak_values_all_right_imag, show_plot=False)
+                       weak_values_right_imag=weak_values_all_right_imag,
+                       show_plot=False)
 
-    # if not single_qbit_rotation:
-    plot_axis_coordinate(weak_values_left=weak_values_all_left_real,
-                         weak_values_right=weak_values_all_right_real,
-                         weak_values_left_imag=weak_values_all_left_imag,
-                         weak_values_right_imag=weak_values_all_right_imag,
-                         n=n,
-                         rot_step=rot_step,
-                         one_qbit_rotation=single_qbit_rotation,
-                         coordinate_axis='z',
-                         real_or_imag='imaginary',
-                         swap_iter=swap_iter,
-                         show_plot=True)
+        plot_complex_plane(weak_values_left=weak_values_all_left_real, weak_values_right=weak_values_all_right_real,
+                           weak_values_left_imag=weak_values_all_left_imag,
+                           weak_values_right_imag=weak_values_all_right_imag, show_plot=False)
 
-    plot_velocity_errors(velocity_check=velocity_check, show_plot=False, separable=separable)
+        # if not single_qbit_rotation:
+        plot_axis_coordinate(weak_values_left=weak_values_all_left_real,
+                             weak_values_right=weak_values_all_right_real,
+                             weak_values_left_imag=weak_values_all_left_imag,
+                             weak_values_right_imag=weak_values_all_right_imag,
+                             n=n,
+                             rot_step=rot_step,
+                             one_qbit_rotation=single_qbit_rotation,
+                             coordinate_axis='z',
+                             real_or_imag='imaginary',
+                             swap_iter=swap_iter,
+                             show_plot=True)
 
-    magnitude_conservation, vector_sum = check_conservation(weak_values_all_left_real, weak_values_all_right_real)
-    print(
-        f"Checks if the sum of the left and right weak value vectors magnitudes are the same for all n-root SWAP steps: {magnitude_conservation}")
+        plot_velocity_errors(velocity_check=velocity_check, show_plot=False, separable=separable)
 
-    # final rotated values that may still have an angle or rotation for ellipse that is not accounted for
-    _, _, final_rotated_vals, plot_dict, _ = plot_weak_values(weak_values_all_left_real, weak_values_all_right_real,
-                                                              weak_values_all_left_imag, weak_values_all_right_imag,
-                                                              plot_quiver=False, plot_plane=True, show_plot=False)
-    # plot real +/- imaginary at each step
-    # _, _, _, _, _ = plot_weak_values(np.array(weak_values_all_left_real) - np.array(weak_values_all_left_imag),
-    #                                  np.array(weak_values_all_right_real) - np.array(weak_values_all_right_imag),
-    #                                  np.array(weak_values_all_left_real) + np.array(weak_values_all_left_imag),
-    #                                  np.array(weak_values_all_right_real) + np.array(weak_values_all_right_imag),
-    #                                  title='Sum/Diff', plot_quiver=False, plot_plane=False, show_plot=True)
+        magnitude_conservation, vector_sum = check_conservation(weak_values_all_left_real, weak_values_all_right_real)
+        print(
+            f"Checks if the sum of the left and right weak value vectors magnitudes are the same for all n-root SWAP steps: {magnitude_conservation}")
 
-    key_list = list(final_rotated_vals.keys())
-    for c in range(len(key_list)):
+        # final rotated values that may still have an angle or rotation for ellipse that is not accounted for
+        _, _, final_rotated_vals, plot_dict, _ = plot_weak_values(weak_values_all_left_real, weak_values_all_right_real,
+                                                                  weak_values_all_left_imag, weak_values_all_right_imag,
+                                                                  plot_quiver=False, plot_plane=True, show_plot=False)
+        # plot real +/- imaginary at each step
+        # _, _, _, _, _ = plot_weak_values(np.array(weak_values_all_left_real) - np.array(weak_values_all_left_imag),
+        #                                  np.array(weak_values_all_right_real) - np.array(weak_values_all_right_imag),
+        #                                  np.array(weak_values_all_left_real) + np.array(weak_values_all_left_imag),
+        #                                  np.array(weak_values_all_right_real) + np.array(weak_values_all_right_imag),
+        #                                  title='Sum/Diff', plot_quiver=False, plot_plane=False, show_plot=True)
 
-        part = key_list[c]  # 'real' or 'imaginary'
-        print(f"\nRunning ellipse check for {part} weak values:")
+        key_list = list(final_rotated_vals.keys())
+        for c in range(len(key_list)):
 
-        # Get weak values for real or imaginary part
-        weak_values_all_left_rotated = final_rotated_vals[part][0]
-        weak_values_all_right_rotated = final_rotated_vals[part][1]
+            part = key_list[c]  # 'real' or 'imaginary'
+            print(f"\nRunning ellipse check for {part} weak values:")
 
-        _, velocity_points, spin_vec_points, _, _ = calc_successive_angles(points_left=weak_values_all_left_rotated,
-                                                                           points_right=weak_values_all_right_rotated,
-                                                                           part=part,
-                                                                           center=[0, 0, 0], rotation_step=rot_step,
-                                                                           show_plot=False)
-        print(f"velocity: {velocity_points}")
-        print(f"spin vecs: {spin_vec_points}")
+            # Get weak values for real or imaginary part
+            weak_values_all_left_rotated = final_rotated_vals[part][0]
+            weak_values_all_right_rotated = final_rotated_vals[part][1]
 
-        ellipse_data_rot = find_dist_around_ellipse(weak_values_all_left_rotated, weak_values_all_right_rotated)
-        # print("\nCheck points on ellipse with calculated values of a, b, h, k (not from fit) and generated values of x,y points:")
-        # plot_ellipse(points=weak_values_all_left_rotated + weak_values_all_right_rotated, foci=foci, center=center, semi_major=major_axis, semi_minor=minor_axis)
+            _, velocity_points, spin_vec_points, _, _ = calc_successive_angles(points_left=weak_values_all_left_rotated,
+                                                                               points_right=weak_values_all_right_rotated,
+                                                                               part=part,
+                                                                               center=[0, 0, 0], rotation_step=rot_step,
+                                                                               show_plot=False)
+            print(f"velocity: {velocity_points}")
+            print(f"spin vecs: {spin_vec_points}")
 
-        major_axis = ellipse_data_rot['major_axis']
-        minor_axis = ellipse_data_rot['minor_axis']
-        focal_length = ellipse_data_rot['focal_length']
-        index_major = ellipse_data_rot['index_major']
+            ellipse_data_rot = find_dist_around_ellipse(weak_values_all_left_rotated, weak_values_all_right_rotated)
+            # print("\nCheck points on ellipse with calculated values of a, b, h, k (not from fit) and generated values of x,y points:")
+            # plot_ellipse(points=weak_values_all_left_rotated + weak_values_all_right_rotated, foci=foci, center=center, semi_major=major_axis, semi_minor=minor_axis)
 
-        xy_left = extract_xyz_coordinate(weak_values_all_left_rotated)
-        xy_right = extract_xyz_coordinate(weak_values_all_right_rotated)
+            major_axis = ellipse_data_rot['major_axis']
+            minor_axis = ellipse_data_rot['minor_axis']
+            focal_length = ellipse_data_rot['focal_length']
+            index_major = ellipse_data_rot['index_major']
 
-        a = 100  # default large value for semi-major axis
-        # re-run parameter fit if Semi-Major Axis (a) is too large
-        cond = True
-        stop = 0
-        while cond and stop <= 100:
-            a, b, h, k, theta = fit_ellipse(xy_left[0] + xy_right[0], xy_left[1] + xy_right[1], major_axis=major_axis,
-                                            minor_axis=ellipse_data_rot['minor_axis'])
-            cond = not (cm.isclose(a, major_axis, rel_tol=1))
-            stop += 1
+            xy_left = extract_xyz_coordinate(weak_values_all_left_rotated)
+            xy_right = extract_xyz_coordinate(weak_values_all_right_rotated)
 
-        print("Semi-Major Axis (a):", a)
-        print("Semi-Minor Axis (b):", b)
-        print("Center (h, k):", h, k)
-        print(f"Angle of rotation: {np.degrees(theta)}")
+            a = 100  # default large value for semi-major axis
+            # re-run parameter fit if Semi-Major Axis (a) is too large
+            cond = True
+            stop = 0
+            while cond and stop <= 100:
+                a, b, h, k, theta = fit_ellipse(xy_left[0] + xy_right[0], xy_left[1] + xy_right[1],
+                                                major_axis=major_axis,
+                                                minor_axis=ellipse_data_rot['minor_axis'])
+                cond = not (cm.isclose(a, major_axis, rel_tol=1))
+                stop += 1
 
-        # print("\nCheck points on ellipse with fit (minimizing function) values of a, b, h, k (not including theta) and weak values of x,y points:")
-        # plot_ellipse(points=weak_values_all_left_rotated + weak_values_all_right_rotated, foci=foci, center=[h, k, 0], semi_major=a, semi_minor=b)
-        print(f"\nRechecking points on ellipse for weak values with transformation angle {np.degrees(theta)}:")
-        # apply angle transformation
-        xy_rot_by_theta_left = []
-        for point in weak_values_all_left_rotated:
-            x_trans = (point[0] - h) * np.cos(theta) + (point[1] - k) * np.sin(theta)
-            y_trans = -(point[0] - h) * np.sin(theta) + (point[1] - k) * np.cos(theta)
-            xy_rot_by_theta_left.append([x_trans, y_trans, 0])
+            print("Semi-Major Axis (a):", a)
+            print("Semi-Minor Axis (b):", b)
+            print("Center (h, k):", h, k)
+            print(f"Angle of rotation: {np.degrees(theta)}")
 
-        xy_rot_by_theta_right = []
-        for point in weak_values_all_right_rotated:
-            x_trans = (point[0] - h) * np.cos(theta) + (point[1] - k) * np.sin(theta)
-            y_trans = -(point[0] - h) * np.sin(theta) + (point[1] - k) * np.cos(theta)
-            xy_rot_by_theta_right.append([x_trans, y_trans, 0])
+            # print("\nCheck points on ellipse with fit (minimizing function) values of a, b, h, k (not including theta) and weak values of x,y points:")
+            # plot_ellipse(points=weak_values_all_left_rotated + weak_values_all_right_rotated, foci=foci, center=[h, k, 0], semi_major=a, semi_minor=b)
+            print(f"\nRechecking points on ellipse for weak values with transformation angle {np.degrees(theta)}:")
+            # apply angle transformation
+            xy_rot_by_theta_left = []
+            for point in weak_values_all_left_rotated:
+                x_trans = (point[0] - h) * np.cos(theta) + (point[1] - k) * np.sin(theta)
+                y_trans = -(point[0] - h) * np.sin(theta) + (point[1] - k) * np.cos(theta)
+                xy_rot_by_theta_left.append([x_trans, y_trans, 0])
 
-        # refit with new x,y values
-        xy_rot_by_theta = xy_rot_by_theta_left + xy_rot_by_theta_right
-        xy = extract_xyz_coordinate(xy_rot_by_theta)
-        cond = True
-        stop = 0
-        while cond and stop <= 100:
-            a, b, h, k, theta = fit_ellipse(xy[0], xy[1], major_axis=major_axis, minor_axis=minor_axis)
-            cond = not (cm.isclose(a, major_axis, rel_tol=1))
-            stop += 1
+            xy_rot_by_theta_right = []
+            for point in weak_values_all_right_rotated:
+                x_trans = (point[0] - h) * np.cos(theta) + (point[1] - k) * np.sin(theta)
+                y_trans = -(point[0] - h) * np.sin(theta) + (point[1] - k) * np.cos(theta)
+                xy_rot_by_theta_right.append([x_trans, y_trans, 0])
 
-        print("Semi-Major Axis (a):", a)
-        print("Semi-Minor Axis (b):", b)
-        print("Center (h, k):", h, k)
-        print(f"Angle of rotation: {np.degrees(theta)}")
-        print(f"Focal length: {focal_length}")
-        print(f"Eccentricity: {eccentricity(a, b)}")
+            # refit with new x,y values
+            xy_rot_by_theta = xy_rot_by_theta_left + xy_rot_by_theta_right
+            xy = extract_xyz_coordinate(xy_rot_by_theta)
+            cond = True
+            stop = 0
+            while cond and stop <= 100:
+                a, b, h, k, theta = fit_ellipse(xy[0], xy[1], major_axis=major_axis, minor_axis=minor_axis)
+                cond = not (cm.isclose(a, major_axis, rel_tol=1))
+                stop += 1
 
-        is_on_ellipse = plot_ellipse(points=xy_rot_by_theta, foci=ellipse_data_rot['foci'], center=[h, k, 0],
-                                     semi_major=a, semi_minor=b)
-        success.append(is_on_ellipse)
-        if not success[-1]:
-            a_val.append([a, major_axis])
-            ellipse_main[f"{part}"] = {}
-        else:
-            _, _, _, spinor_cross_prod, diff_cross_prod = calc_successive_angles(points_left=xy_rot_by_theta_left,
-                                                                                 points_right=xy_rot_by_theta_right,
-                                                                                 part=part, center=[h, k, 0],
-                                                                                 show_plot=False)
+            print("Semi-Major Axis (a):", a)
+            print("Semi-Minor Axis (b):", b)
+            print("Center (h, k):", h, k)
+            print(f"Angle of rotation: {np.degrees(theta)}")
+            print(f"Focal length: {focal_length}")
+            print(f"Eccentricity: {eccentricity(a, b)}")
 
-            # update dictionary if success
-            ellipse_basic = {}
-            subscript = '_r' if part == 'real' else '_i'
-            ellipse_basic["a" + subscript] = a
-            ellipse_basic["b" + subscript] = b
-            # ellipse_basic["center" + subscript] = [h, k]
-            ellipse_basic["focal_length" + subscript] = focal_length
-            ellipse_basic["area" + subscript] = np.pi * a * b
-            ellipse_basic["eccentricity" + subscript] = eccentricity(a, b)
-            ellipse_basic["hits_major_axis" + subscript] = index_major
-            ellipse_basic["root_swap_fraction" + subscript] = 1 - index_major / len(weak_values_all_left_rotated)
-            ellipse_basic["spinor_cross_prod" + subscript] = spinor_cross_prod[:10]
-            ellipse_basic["diff_cross_prod" + subscript] = diff_cross_prod[:10]
+            is_on_ellipse = plot_ellipse(points=xy_rot_by_theta, foci=ellipse_data_rot['foci'], center=[h, k, 0],
+                                         semi_major=a, semi_minor=b)
+            success.append(is_on_ellipse)
+            if not success[-1]:
+                a_val.append([a, major_axis])
+                ellipse_main[f"{part}"] = {}
+            else:
+                _, _, _, spinor_cross_prod, diff_cross_prod = calc_successive_angles(points_left=xy_rot_by_theta_left,
+                                                                                     points_right=xy_rot_by_theta_right,
+                                                                                     part=part, center=[h, k, 0],
+                                                                                     show_plot=False)
 
-            # Calculate angle of where ellipse starts with respect to the major axis on the right
-            start_point = plot_dict[part]['start_point_left']
-            ellipse_basic["start_angle_left" + subscript] = start_point
-            u = np.array([ellipse_data_rot['max_right'][0] - h, ellipse_data_rot['max_right'][1] - k])
-            v = np.array([start_point[0] - h, start_point[1] - k])
+                # update dictionary if success
+                ellipse_basic = {}
+                subscript = '_r' if part == 'real' else '_i'
+                ellipse_basic["a" + subscript] = a
+                ellipse_basic["b" + subscript] = b
+                # ellipse_basic["center" + subscript] = [h, k]
+                ellipse_basic["focal_length" + subscript] = focal_length
+                ellipse_basic["area" + subscript] = np.pi * a * b
+                ellipse_basic["eccentricity" + subscript] = eccentricity(a, b)
+                ellipse_basic["hits_major_axis" + subscript] = index_major
+                ellipse_basic["root_swap_fraction" + subscript] = 1 - index_major / len(weak_values_all_left_rotated)
+                ellipse_basic["spinor_cross_prod" + subscript] = spinor_cross_prod[:10]
+                ellipse_basic["diff_cross_prod" + subscript] = diff_cross_prod[:10]
 
-            # Calculate start angle between right most point on major axis and starting point (picked from the left
-            # half of the ellipse)
-            ellipse_basic["start_angle_left" + subscript] = angle_between_vectors(u, v)[1][0]
+                # Calculate angle of where ellipse starts with respect to the major axis on the right
+                start_point = plot_dict[part]['start_point_left']
+                ellipse_basic["start_angle_left" + subscript] = start_point
+                u = np.array([ellipse_data_rot['max_right'][0] - h, ellipse_data_rot['max_right'][1] - k])
+                v = np.array([start_point[0] - h, start_point[1] - k])
 
-            # Calculate the cross product of 2 vectors on the left side (or right) to get the direction of the ellipse
-            ellipse_basic['direction_left' + subscript] = calc_normal_vector(p1=[h, k],
-                                                                             p2=weak_values_all_left_rotated[0],
-                                                                             p3=weak_values_all_left_rotated[5])
-            ellipse_basic['direction_right' + subscript] = calc_normal_vector(p1=[h, k],
-                                                                              p2=weak_values_all_right_rotated[0],
-                                                                              p3=weak_values_all_right_rotated[5])
+                # Calculate start angle between right most point on major axis and starting point (picked from the left
+                # half of the ellipse)
+                ellipse_basic["start_angle_left" + subscript] = angle_between_vectors(u, v)[1][0]
 
-            ellipse_basic["normal_vec" + subscript] = plot_dict[part]["normal_vec"]
-            ellipse_main[f"{part}"] = ellipse_basic
-            ellipse_main[f"{part}"][f"velocity_{part}"] = velocity_points[part]
-            ellipse_main[f"{part}"][f"spin_vecs_{part}"] = spin_vec_points[part]
+                # Calculate the cross product of 2 vectors on the left side (or right) to get the direction of the ellipse
+                ellipse_basic['direction_left' + subscript] = calc_normal_vector(p1=[h, k],
+                                                                                 p2=weak_values_all_left_rotated[0],
+                                                                                 p3=weak_values_all_left_rotated[5])
+                ellipse_basic['direction_right' + subscript] = calc_normal_vector(p1=[h, k],
+                                                                                  p2=weak_values_all_right_rotated[0],
+                                                                                  p3=weak_values_all_right_rotated[5])
 
-            # Calculate angle between normal and center to center vector
-            ellipse_data_r = find_dist_around_ellipse(weak_values_all_left_real, weak_values_all_right_real)
-            ellipse_data_i = find_dist_around_ellipse(weak_values_all_left_imag, weak_values_all_right_imag)
+                ellipse_basic["normal_vec" + subscript] = plot_dict[part]["normal_vec"]
+                ellipse_main[f"{part}"] = ellipse_basic
+                ellipse_main[f"{part}"][f"velocity_{part}"] = velocity_points[part]
+                ellipse_main[f"{part}"][f"spin_vecs_{part}"] = spin_vec_points[part]
 
-            center_r = ellipse_data_r['center']
-            center_i = ellipse_data_i['center']
-            center_to_center_vec_i = [center_r[c] - center_i[c] for c in range(3)]
-            center_to_center_vec_r = [center_i[c] - center_r[c] for c in range(3)]
+                # Calculate angle between normal and center to center vector
+                ellipse_data_r = find_dist_around_ellipse(weak_values_all_left_real, weak_values_all_right_real)
+                ellipse_data_i = find_dist_around_ellipse(weak_values_all_left_imag, weak_values_all_right_imag)
 
-            # TODO fix so that real and imaginary keys don't throw an error if running with either real or imaginary parts
-            # ellipse_main["real"]['angle_normal_r_ctc'] = angle_between_vectors(center_to_center_vec_i,
-            #                                                                    ellipse_main["real"]['normal_vec_r'])[1]  # ctc - short for center to center vector
-            # ellipse_main['imaginary']['angle_normal_i_ctc'] = angle_between_vectors(center_to_center_vec_r, ellipse_main['imaginary']['normal_vec_i'])[1]
-            #
-            # # Calculate angle between normals
-            # normal_real = ellipse_main['real']['normal_vec_r']
-            # normal_imag = ellipse_main['imaginary']['normal_vec_i']
-            # ellipse_main['angle_between_normals'] = angle_between_vectors(normal_real, normal_imag)[1]
-            #
-            # # Calculate angles between ellipse normal and center to origin vector
-            # nr = ellipse_main['real']['normal_vec_r']
-            # ellipse_main['real']['angle_normal_otc_r'] = angle_between_vectors(nr, np.array(center_r))[1]  # otc - short for origin to center vector
-            # ni = ellipse_main['imaginary']['normal_vec_i']
-            # ellipse_main['imaginary']['angle_normal_otc_i'] = angle_between_vectors(nr, np.array(center_i))[1]  # otc - short for origin to center vector
+                center_r = ellipse_data_r['center']
+                center_i = ellipse_data_i['center']
+                center_to_center_vec_i = [center_r[c] - center_i[c] for c in range(3)]
+                center_to_center_vec_r = [center_i[c] - center_r[c] for c in range(3)]
 
-            # Calculate angle between ellipse normal and triangle normal
-            # triangle_normal = calc_normal_vector(p1=[0, 0, 0], p2=center_r, p3=center_i)
-            # ellipse_main['real']['angle_normal_triangle_r'] = angle_between_vectors(triangle_normal, normal_real)[1]
-            # ellipse_main['imaginary']['angle_normal_triangle_i'] = angle_between_vectors(triangle_normal, normal_imag)[1]
+                # TODO fix so that real and imaginary keys don't throw an error if running with either real or imaginary parts
+                # ellipse_main["real"]['angle_normal_r_ctc'] = angle_between_vectors(center_to_center_vec_i,
+                #                                                                    ellipse_main["real"]['normal_vec_r'])[1]  # ctc - short for center to center vector
+                # ellipse_main['imaginary']['angle_normal_i_ctc'] = angle_between_vectors(center_to_center_vec_r, ellipse_main['imaginary']['normal_vec_i'])[1]
+                #
+                # # Calculate angle between normals
+                # normal_real = ellipse_main['real']['normal_vec_r']
+                # normal_imag = ellipse_main['imaginary']['normal_vec_i']
+                # ellipse_main['angle_between_normals'] = angle_between_vectors(normal_real, normal_imag)[1]
+                #
+                # # Calculate angles between ellipse normal and center to origin vector
+                # nr = ellipse_main['real']['normal_vec_r']
+                # ellipse_main['real']['angle_normal_otc_r'] = angle_between_vectors(nr, np.array(center_r))[1]  # otc - short for origin to center vector
+                # ni = ellipse_main['imaginary']['normal_vec_i']
+                # ellipse_main['imaginary']['angle_normal_otc_i'] = angle_between_vectors(nr, np.array(center_i))[1]  # otc - short for origin to center vector
 
-            ellipse_dict_all.append(ellipse_main)
+                # Calculate angle between ellipse normal and triangle normal
+                # triangle_normal = calc_normal_vector(p1=[0, 0, 0], p2=center_r, p3=center_i)
+                # ellipse_main['real']['angle_normal_triangle_r'] = angle_between_vectors(triangle_normal, normal_real)[1]
+                # ellipse_main['imaginary']['angle_normal_triangle_i'] = angle_between_vectors(triangle_normal, normal_imag)[1]
 
-    del final_rotated_vals, weak_values_all_left_rotated, weak_values_all_right_rotated, xy_left, xy_right, \
-        xy_rot_by_theta, xy, weak_values_all_left_real, weak_values_all_right_real, weak_values_all_left_imag, \
-        weak_values_all_right_imag
-    gc.collect()
+                ellipse_dict_all.append(ellipse_main)
 
-if all(success):
-    print("All succeeded!")
-else:
-    print(len(a_val), a_val)
+        del final_rotated_vals, weak_values_all_left_rotated, weak_values_all_right_rotated, xy_left, xy_right, \
+            xy_rot_by_theta, xy, weak_values_all_left_real, weak_values_all_right_real, weak_values_all_left_imag, \
+            weak_values_all_right_imag
+        gc.collect()
 
-# Creating histogram
-# fig, ax = plt.subplots()
-# ax.hist(np.array(hist_area_real), bins=40, label='area real') #np.linspace(int(min(a)), int(max(a)), 1)
-# ax.hist(np.array(angle_between_normals), bins=40, label='angle between ellipse normals', alpha=.5)
-#
-# plt.legend()
-# plt.show()
+    if all(success):
+        print("All succeeded!")
+    else:
+        print(len(a_val), a_val)
 
-# field names
-fields = list(ellipse_dict_all[0]['real'].keys()) + list(ellipse_dict_all[0]['imaginary'].keys())
+    # Creating histogram
+    # fig, ax = plt.subplots()
+    # ax.hist(np.array(hist_area_real), bins=40, label='area real') #np.linspace(int(min(a)), int(max(a)), 1)
+    # ax.hist(np.array(angle_between_normals), bins=40, label='angle between ellipse normals', alpha=.5)
+    #
+    # plt.legend()
+    # plt.show()
 
-# name of csv file
-filename = "ellipse_data.csv"
+    # field names
+    print(f"Ellipse dictionary: {ellipse_dict_all}")
+    fields = list(ellipse_dict_all[0]['real'].keys()) + list(ellipse_dict_all[0]['imaginary'].keys())
 
-# Round numbers
-round_num = False
-if round_num:
-    for ellipse in ellipse_dict_all:
-        for part in ['real', 'imaginary']:
-            for key in ellipse[part].keys():
-                ellipse[part][key] = np.around(ellipse[part][key], decimals=4)
+    # name of csv file
+    filename = "ellipse_data.csv"
 
-# writing to csv file
-# with open(filename, 'w') as csvfile:
-#     # creating a csv dict writer object
-#     writer = csv.DictWriter(csvfile, fieldnames=fields)
-#
-#     # writing headers (field names)
-#     writer.writeheader()
-#
-#     # writing data rows
-#     for ellipse in ellipse_dict_all:
-#         print(ellipse["real"])
-#         print(ellipse["imaginary"])
-#
-#         if (ellipse["real"] is not None) or (ellipse["imaginary"] is not None):
-#             writer.writerows([ellipse["real"]] + [ellipse["imaginary"]])
+    # Round numbers
+    round_num = False
+    if round_num:
+        for ellipse in ellipse_dict_all:
+            for part in ['real', 'imaginary']:
+                for key in ellipse[part].keys():
+                    ellipse[part][key] = np.around(ellipse[part][key], decimals=4)
 
-time_stop = time.time()
-run_time = time_stop - time_start
-print(f"Total run time: {run_time}")
-print(f"Time per single run (average): {run_time / num_state}")
+    # writing to csv file
+    # with open(filename, 'w') as csvfile:
+    #     # creating a csv dict writer object
+    #     writer = csv.DictWriter(csvfile, fieldnames=fields)
+    #
+    #     # writing headers (field names)
+    #     writer.writeheader()
+    #
+    #     # writing data rows
+    #     for ellipse in ellipse_dict_all:
+    #         print(ellipse["real"])
+    #         print(ellipse["imaginary"])
+    #
+    #         if (ellipse["real"] is not None) or (ellipse["imaginary"] is not None):
+    #             writer.writerows([ellipse["real"]] + [ellipse["imaginary"]])
 
-# name of csv file
-filename = "velocity_with_rotation.csv" if single_qbit_rotation else "velocity_without_rotation.csv"
+    time_stop = time.time()
+    run_time = time_stop - time_start
+    print(f"Total run time: {run_time}")
+    print(f"Time per single run (average): {run_time / num_state}")
 
-# print(csv_data)
+    # name of csv file
+    filename = "velocity_with_rotation.csv" if single_qbit_rotation else "velocity_without_rotation.csv"
 
-# writing to csv file
-with open(filename, 'w') as csvfile:
-    # creating a csv writer object
-    csvwriter = csv.writer(csvfile)
+    # print(csv_data)
 
-    # writing the data rows
-    csvwriter.writerows(csv_data)
+    # writing to csv file
+    with open(filename, 'w') as csvfile:
+        # creating a csv writer object
+        csvwriter = csv.writer(csvfile)
+
+        # writing the data rows
+        csvwriter.writerows(csv_data)
+
+
+if __name__ == "__main__":
+    main()
