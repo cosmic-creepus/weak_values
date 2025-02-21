@@ -90,6 +90,8 @@ def generate_bloch_sweep(start_basis, end_basis, step=np.pi/90, halfway=False):
         theta_end, phi_end = theta_halfway, phi_halfway
 
     angles = []
+    theta_change = False
+    phi_change = False
 
     # Normalize angles to [0, 2π)
     phi_start = normalize_angle(phi_start)
@@ -101,10 +103,14 @@ def generate_bloch_sweep(start_basis, end_basis, step=np.pi/90, halfway=False):
 
     if theta_range > 0 and phi_range > 0:
         num_steps = max(1, int(max(theta_range, phi_range) / step))
+        theta_change = True
+        phi_change = True
     elif theta_range > 0:
         num_steps = max(1, int(theta_range / step))
+        theta_change = True
     else:
         num_steps = max(1, int(phi_range / step))
+        phi_change = True
 
     # Generate theta and phi values based on whether they change or remain constant
     if theta_range > 0:
@@ -123,7 +129,7 @@ def generate_bloch_sweep(start_basis, end_basis, step=np.pi/90, halfway=False):
     # Ensure the last state exactly matches the expected final values
     angles[-1] = (theta_end, phi_end)
 
-    return angles, [round(theta_start, 4), round(theta_end, 4), round(step, 4)], [round(phi_start, 4), round(phi_end, 4), round(step, 4)]
+    return angles, [round(theta_start, 4), round(theta_end, 4), round(step, 4)], [round(phi_start, 4), round(phi_end, 4), round(step, 4)], theta_change, phi_change
 
 
 # ___________|i> = (|0> + |1>) / √2
@@ -141,8 +147,8 @@ i = np.array([0+0j, 0.6+0j, -.8+0j, 0+0j])
 dict_vals_sweep = {"Real": {0: [], 1: [], 2: []}, "Imaginary": {0: [], 1: [], 2: []}, "Prob": [], "Angle": []}
 
 # Example usage: Sweep from |0⟩ (Z-basis) to |+⟩ (X-basis) and back
-angles_plus, theta_list, phi_list = generate_bloch_sweep("X+", "Z+", step=np.pi/(1 * 70), halfway=False)
-angles_minus, theta_list_minus, phi_list_minus = generate_bloch_sweep("X+", "Y-", step=np.pi/(1 * 70), halfway=False)
+angles_plus, theta_list, phi_list, theta_change, phi_change = generate_bloch_sweep("X+", "Y+", step=np.pi/(1 * 90), halfway=False)
+angles_minus, theta_list_minus, phi_list_minus, _, _ = generate_bloch_sweep("X+", "Y-", step=np.pi/(1 * 90), halfway=False)
 
 print(f"theta_list: {theta_list}")
 print(f"theta_list_minus: {theta_list_minus}")
@@ -217,10 +223,19 @@ for c, (theta, phi) in enumerate(angles_plus):
 fig, ax = plt.subplots(3, 1, figsize=(10, 10))
 colors = ["red", "blue", "green"]
 labels = ["X", "Y", "Z"]
+
 for i in range(3):
-    ax[i].plot(np.linspace(theta_list[0] * 180/np.pi, theta_list[1] * 180/np.pi, len(dict_vals_sweep["Real"][i])), dict_vals_sweep["Real"][i], color=colors[i], label=f"Real {labels[i]}")
-    ax[i].plot(np.linspace(theta_list[0] * 180/np.pi, theta_list[1] * 180/np.pi, len(dict_vals_sweep["Imaginary"][i])), dict_vals_sweep["Imaginary"][i], color=colors[i], linestyle="--", label=f"Imaginary {labels[i]}")
-    ax[i].set_xlabel("Phi")
+    if theta_change:
+        ax[i].plot(np.linspace(theta_list[0] * 180/np.pi, theta_list[1] * 180/np.pi, len(dict_vals_sweep["Real"][i])), dict_vals_sweep["Real"][i], color=colors[i], label=f"Real {labels[i]}")
+        ax[i].plot(np.linspace(theta_list[0] * 180/np.pi, theta_list[1] * 180/np.pi, len(dict_vals_sweep["Imaginary"][i])), dict_vals_sweep["Imaginary"][i], color=colors[i], linestyle="--", label=f"Imaginary {labels[i]}")
+        ax[i].set_xlabel("Theta")
+
+    elif phi_change:
+        ax[i].plot(np.linspace(phi_list[0] * 180/np.pi, phi_list[1] * 180/np.pi, len(dict_vals_sweep["Real"][i])), dict_vals_sweep["Real"][i], color=colors[i], label=f"Real {labels[i]}")
+        ax[i].plot(np.linspace(phi_list[0] * 180/np.pi, phi_list[1] * 180/np.pi, len(dict_vals_sweep["Imaginary"][i])), dict_vals_sweep["Imaginary"][i], color=colors[i], linestyle="--", label=f"Imaginary {labels[i]}")
+        ax[i].set_xlabel("Phi")
+    else:
+        pass
     ax[i].set_ylabel("Weak Value Ratio")
     ax[i].legend()
     ax[i].grid()
