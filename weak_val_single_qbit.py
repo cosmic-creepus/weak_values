@@ -3,6 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from weak_values_legacy import *
+from IPython.display import display, Math
 
 hbar = 2
 
@@ -147,7 +148,7 @@ i = np.array([0+0j, 0.6+0j, -.8+0j, 0+0j])
 dict_vals_sweep = {"Real": {0: [], 1: [], 2: []}, "Imaginary": {0: [], 1: [], 2: []}, "Prob": [], "Angle": []}
 
 # Example usage: Sweep from |0⟩ (Z-basis) to |+⟩ (X-basis) and back
-angles_plus, theta_list, phi_list, theta_change, phi_change = generate_bloch_sweep("X+", "Y+", step=np.pi/(1 * 90), halfway=False)
+angles_plus, theta_list, phi_list, theta_change, phi_change = generate_bloch_sweep("X+", "Y-", step=np.pi/(1 * 90), halfway=False)
 angles_minus, theta_list_minus, phi_list_minus, _, _ = generate_bloch_sweep("X+", "Y-", step=np.pi/(1 * 90), halfway=False)
 
 print(f"theta_list: {theta_list}")
@@ -193,10 +194,10 @@ for c, (theta, phi) in enumerate(angles_plus):
     print(f"W_b: {W_b}")
 
     for c in range(3):
-        # real = W_a[c].real / W_b[c].real
-        # imag = W_a[c].imag / W_b[c].imag
-        real = W_b[c].real / W_a[c].real
-        imag = W_b[c].imag / W_a[c].imag
+        real = W_a[c].real / W_b[c].real
+        imag = W_a[c].imag / W_b[c].imag
+        # real = W_b[c].real / W_a[c].real
+        # imag = W_b[c].imag / W_a[c].imag
         dict_vals_sweep["Real"][c].append(real)
         dict_vals_sweep["Imaginary"][c].append(imag)
         print(f"\033[32m Real W_a[{c}]/W_b[{c}]: {real} \033[0m")
@@ -220,26 +221,38 @@ for c, (theta, phi) in enumerate(angles_plus):
 
 
 # Plot values from dict_vals_sweep against theta
-fig, ax = plt.subplots(3, 1, figsize=(10, 10))
+ffig, ax = plt.subplots(3, 2, figsize=(15, 15))
 colors = ["red", "blue", "green"]
 labels = ["X", "Y", "Z"]
 
 for i in range(3):
+    # First column: plot dict_vals_sweep["Real"][i] and dict_vals_sweep["Imaginary"][i]
     if theta_change:
-        ax[i].plot(np.linspace(theta_list[0] * 180/np.pi, theta_list[1] * 180/np.pi, len(dict_vals_sweep["Real"][i])), dict_vals_sweep["Real"][i], color=colors[i], label=f"Real {labels[i]}")
-        ax[i].plot(np.linspace(theta_list[0] * 180/np.pi, theta_list[1] * 180/np.pi, len(dict_vals_sweep["Imaginary"][i])), dict_vals_sweep["Imaginary"][i], color=colors[i], linestyle="--", label=f"Imaginary {labels[i]}")
-        ax[i].set_xlabel("Theta")
-
+        ax[i, 0].plot(np.linspace(theta_list[0] * 180/np.pi, theta_list[1] * 180/np.pi, len(dict_vals_sweep["Real"][i])), dict_vals_sweep["Real"][i], color=colors[i], label=f"Real {labels[i]}")
+        ax[i, 0].plot(np.linspace(theta_list[0] * 180/np.pi, theta_list[1] * 180/np.pi, len(dict_vals_sweep["Imaginary"][i])), dict_vals_sweep["Imaginary"][i], color=colors[i], linestyle="--", label=f"Imaginary {labels[i]}")
+        ax[i, 0].set_xlabel("Theta")
     elif phi_change:
-        ax[i].plot(np.linspace(phi_list[0] * 180/np.pi, phi_list[1] * 180/np.pi, len(dict_vals_sweep["Real"][i])), dict_vals_sweep["Real"][i], color=colors[i], label=f"Real {labels[i]}")
-        ax[i].plot(np.linspace(phi_list[0] * 180/np.pi, phi_list[1] * 180/np.pi, len(dict_vals_sweep["Imaginary"][i])), dict_vals_sweep["Imaginary"][i], color=colors[i], linestyle="--", label=f"Imaginary {labels[i]}")
-        ax[i].set_xlabel("Phi")
-    else:
-        pass
-    ax[i].set_ylabel("Weak Value Ratio")
-    ax[i].legend()
-    ax[i].grid()
+        ax[i, 0].plot(np.linspace(phi_list[0] * 180/np.pi, phi_list[1] * 180/np.pi, len(dict_vals_sweep["Real"][i])), dict_vals_sweep["Real"][i], color=colors[i], label=f"Real {labels[i]}")
+        ax[i, 0].plot(np.linspace(phi_list[0] * 180/np.pi, phi_list[1] * 180/np.pi, len(dict_vals_sweep["Imaginary"][i])), dict_vals_sweep["Imaginary"][i], color=colors[i], linestyle="--", label=f"Imaginary {labels[i]}")
+        ax[i, 0].set_xlabel("Phi")
+    ax[i, 0].set_ylabel("$W_a/W_b$")
+    ax[i, 0].legend()
+    ax[i, 0].grid()
 
+    # Second column: plot 1/dict_vals_sweep["Real"][i] and 1/dict_vals_sweep["Imaginary"][i]
+    if theta_change:
+        ax[i, 1].plot(np.linspace(theta_list[0] * 180/np.pi, theta_list[1] * 180/np.pi, len(dict_vals_sweep["Real"][i])), 1/np.array(dict_vals_sweep["Real"][i]), color=colors[i], label=f"Real {labels[i]}")
+        ax[i, 1].plot(np.linspace(theta_list[0] * 180/np.pi, theta_list[1] * 180/np.pi, len(dict_vals_sweep["Imaginary"][i])), 1/np.array(dict_vals_sweep["Imaginary"][i]), color=colors[i], linestyle="--", label=f"Imaginary {labels[i]}")
+        ax[i, 1].set_xlabel("Theta")
+    elif phi_change:
+        ax[i, 1].plot(np.linspace(phi_list[0] * 180/np.pi, phi_list[1] * 180/np.pi, len(dict_vals_sweep["Real"][i])), 1/np.array(dict_vals_sweep["Real"][i]), color=colors[i], label=f"Real {labels[i]}")
+        ax[i, 1].plot(np.linspace(phi_list[0] * 180/np.pi, phi_list[1] * 180/np.pi, len(dict_vals_sweep["Imaginary"][i])), 1/np.array(dict_vals_sweep["Imaginary"][i]), color=colors[i], linestyle="--", label=f"Imaginary {labels[i]}")
+        ax[i, 1].set_xlabel("Phi")
+    ax[i, 1].set_ylabel("$W_b/W_a$")
+    ax[i, 1].legend()
+    ax[i, 1].grid()
+
+plt.tight_layout()
 plt.show()
 
 # Plot weak values
